@@ -62,6 +62,7 @@ define([
                                         'SolicitudPago': solicitudPago,
                                         'ActualizaContrato': actualizaContrato,
                                         'InteresesMoratorios': interesesMoratorios,
+                                        'ReservaPasivo': reservaPasivo,
                                         //'AplicacionCobranzaASH' : AplicacionCobranza,
                                 }
                                 let callback = operations[request.tipo];
@@ -1394,7 +1395,6 @@ define([
                                 isDynamic: true
                         })
 
-                        log.error("Pasadas")
                         return {
                                 recordType: recordType,
                                 transactions: [interesMoratorioData.getValue('custrecord_imr_intmo_transaccion')],
@@ -1402,6 +1402,39 @@ define([
                                 solPagos: [],
                                 folios: []
                         }
+                }
+
+                function reservaPasivo(data, logId) {
+                        const recordType = "customrecord_imr_poliza_adjudicados";
+                        let recordsId = [];
+                        let mapsReinstalacionClientes = [
+                                {
+                                        type: "number",
+                                        field: "monto",
+                                        fieldRecord: "custrecord_imr_padj_monto"
+                                }, {
+                                        type: "date",
+                                        field: "fecha",
+                                        fieldRecord: "custrecord_imr_padj_fecha"
+                                }
+                        ];
+                        const recordObj = record.create({ type: recordType, isDynamic: true });
+                        setDataRecord(mapsReinstalacionClientes, data, recordObj);
+                        recordsId.push(recordObj.save({ ignoreMandatoryFields: true }));
+
+                        let reservaPasivoData = record.load({
+                                type: recordType,
+                                id: recordsId[0],
+                                isDynamic: true
+                        })
+
+                        return {
+                                recordType: recordType,
+                                transactions: [reservaPasivoData.getValue('custrecord_imr_padj_diario')],
+                                records: recordsId,
+                                solPagos: [],
+                                folios: []
+                        };
                 }
 
                 function applyPaymentLine(recordObj, line) {

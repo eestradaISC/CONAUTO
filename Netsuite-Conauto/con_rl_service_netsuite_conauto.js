@@ -52,6 +52,7 @@ define([
                     'ActualizaContrato': actualizaContrato,
                     'PagoUnidad': pagoUnidad,
                     'InteresesMoratorios': interesesMoratorios,
+                    'ReservaPasivo': reservaPasivo,
                     //'AplicacionCobranzaASH' : AplicacionCobranza,
                 }
                 let callback = operations[data.tipo];
@@ -392,7 +393,45 @@ define([
 
         }
 
+        /**
+        *
+        * @param data
+        * @param {String} data.idNotificacion
+        * @param {String} data.tipo
+        * @param {Double} data.monto
+        * @param {String} data.fecha
+        * @param response
+        * @param {Array} response.Info
+        */
         function interesesMoratorios(data, response) {
+            let logId = null;
+            logId = createLog(data, response);
+            response.logId = logId;
+            if (data.idNotificacion.length > 0) {
+                let mandatoryFields = ["idNotificacion", "tipo", "fecha", "monto",];
+                checkMandatoryFields(data, mandatoryFields, response);
+                checkMandatoryFieldsDate(data, ["fecha"], response);
+            }
+            else {
+                response.code = 400;
+                response.info.push('NO SE ENCONTRÓ VALOR PARA ID NOTIFICACIÓN');
+                handlerErrorLogRequest('NO SE ENCONTRÓ VALOR PARA ID NOTIFICACIÓN', logId);
+            }
+
+        }
+
+
+        /**
+        *
+        * @param data
+        * @param {String} data.idNotificacion
+        * @param {String} data.tipo
+        * @param {Double} data.monto
+        * @param {String} data.fecha
+        * @param response
+        * @param {Array} response.Info
+        */
+        function reservaPasivo(data, response) {
             let logId = null;
             logId = createLog(data, response);
             response.logId = logId;

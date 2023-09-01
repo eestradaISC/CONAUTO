@@ -100,6 +100,16 @@ define([
                             });
                             taskServiceIM.submit();
                             break;
+                        case 'ReservaPasivo':
+                            let taskServiceRP = task.create({
+                                taskType: task.TaskType.SCHEDULED_SCRIPT,
+                                scriptId: 'customscript_con_sc_service_ns_conauto',
+                                params: {
+                                    custscript_log_service_id: logId
+                                }
+                            });
+                            taskServiceRP.submit();
+                            break;
                     }
                 } catch (e) {
                     handlerErrorLogRequest(e.message.toString(), logId, recordType)
