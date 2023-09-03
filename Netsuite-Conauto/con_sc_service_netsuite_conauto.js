@@ -63,6 +63,7 @@ define([
                                         'ActualizaContrato': actualizaContrato,
                                         'InteresesMoratorios': interesesMoratorios,
                                         'ReservaPasivo': reservaPasivo,
+                                        "Bajas": bajaFolio,
                                         //'AplicacionCobranzaASH' : AplicacionCobranza,
                                 }
                                 let callback = operations[request.tipo];
@@ -1437,19 +1438,101 @@ define([
                         };
                 }
 
+                function bajaFolio(data, logId) {
+                        let recordType = "customrecord_imr_baja_folio";
+                        let recordsId = [];
+                        let transactions = [];
+                        let folios = [];
+
+
+                        let folioId = recordFind("customrecord_cseg_folio_conauto", 'anyof', "externalid", data.folio);
+                        if (folioId) {
+                                folios.push(folioId);
+                                data.folioId = folioId;
+                                let recordObj = record.create({
+                                        type: recordType,
+                                        isDynamic: true
+                                });
+                                let fields = [
+                                        {
+                                                type: "text",
+                                                field: "folioId",
+                                                fieldRecord: "custrecord_imr_bafo_folio"
+                                        },
+                                        {
+                                                type: "text",
+                                                field: "estatus",
+                                                fieldRecord: "custrecord_imr_bafo_estatus"
+                                        },
+                                        {
+                                                type: "text",
+                                                field: "tipoPago",
+                                                fieldRecord: "custrecord_imr_bafo_tipo_pago"
+                                        },
+                                        {
+                                                type: "text",
+                                                field: "mes",
+                                                fieldRecord: "custrecord_imr_bafo_mes"
+                                        },
+                                        {
+                                                type: "number",
+                                                field: "montoPenalizacion",
+                                                fieldRecord: "custrecord_imr_bafo_monto_pena"
+                                        },
+                                        {
+                                                type: "number",
+                                                field: "reembolso",
+                                                fieldRecord: "custrecord_imr_bafo_monto_pagar"
+                                        }
+                                ];
+                                for (let field of fields) {
+                                        let value = data[field.field]
+                                        recordObj.setValue({
+                                                fieldId: field.fieldRecord,
+                                                value: value
+                                        });
+                                };
+
+                                recordsId.push(recordObj.save({
+                                        ignoreMandatoryFields: true
+                                }));
+
+                                let bajaFolio = record.load({
+                                        type: recordType,
+                                        id: recordsId[0],
+                                        isDynamic: true
+                                })
+
+                                transactions.push(bajaFolio.getValue("custrecord_imr_bafo_transaccion"))
+                        } else {
+                                throw error.create({
+                                        name: "FOLIO_NOT_FOUND",
+                                        message: "NO se encontro el folio: " + data.folio
+                                })
+                        }
+
+
+                        return {
+                                recordType: recordType,
+                                transactions: transactions,
+                                records: recordsId,
+                                solPagos: [],
+                                folios: folios
+                        };
+                }
+
                 function applyPaymentLine(recordObj, line) {
                         let payments = 0;
                         let fields = ['custrecord_imr_amo_det_aplapo', 'custrecord_imr_amo_aplgtos', 'custrecord_imr_amo_det_aplivagts', 'custrecord_imr_amo_det_aplsegvida', 'custrecord_imr_amo_det_aplsegaut',
                                 'custrecord_imr_amo_det_aplintpe', 'custrecord_imr_amo_det_montoapl'];
-                        for (let i = 0; i < fields.length; i++) {
-                                let field = fields[i];
+                        for (let field of fields) {
                                 payments += parseFloat(recordObj.getSublistValue({
                                         sublistId: 'recmachcustrecord_imr_amo_det_parent',
                                         fieldId: field,
                                         line: line
                                 })) || 0;
-                        }
-                        return payments > 0 ? true : false;
+                        };
+                        return payments > 0;
                 }
 
                 function getValueFormat(type, value) {
@@ -1466,8 +1549,7 @@ define([
                 }
 
                 function checkMandatoryFields(data, mandatoryFields, line, errors) {
-                        for (let i = 0; i < mandatoryFields.length; i++) {
-                                let field = mandatoryFields[i];
+                        for (let field of mandatoryFields) {
                                 let value = data[field];
                                 if (!(value || parseFloat(value) === 0 || util.isBoolean(value))) {
                                         errors.push((line ? ('Linea ' + line + ': ') : '') + 'El campo ' + field + ' no debe de estar vacio');
@@ -1525,8 +1607,7 @@ define([
                 }
 
                 function setDataRecord(maps, data, record) {
-                        for (let i = 0; i < maps.length; i++) {
-                                let dataField = maps[i];
+                        for (let dataField of maps) {
                                 if (Object.getOwnPropertyNames(data).indexOf(dataField.field) != -1) {
                                         let value = data[dataField.field];
                                         value = getValueFormat(dataField.type, value);
