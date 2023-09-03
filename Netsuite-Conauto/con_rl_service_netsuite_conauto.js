@@ -53,6 +53,7 @@ define([
                     'PagoUnidad': pagoUnidad,
                     'InteresesMoratorios': interesesMoratorios,
                     'ReservaPasivo': reservaPasivo,
+                    'Bajas': bajaFolio,
                     //'AplicacionCobranzaASH' : AplicacionCobranza,
                 }
                 let callback = operations[data.tipo];
@@ -423,12 +424,13 @@ define([
 
         /**
         *
-        * @param data
+        * @param {Object} data
         * @param {String} data.idNotificacion
         * @param {String} data.tipo
         * @param {Double} data.monto
         * @param {String} data.fecha
-        * @param response
+        * @param {Object} response
+        * @param {Number} response.code 
         * @param {Array} response.Info
         */
         function reservaPasivo(data, response) {
@@ -444,6 +446,42 @@ define([
                 response.code = 400;
                 response.info.push('NO SE ENCONTRÓ VALOR PARA ID NOTIFICACIÓN');
                 handlerErrorLogRequest('NO SE ENCONTRÓ VALOR PARA ID NOTIFICACIÓN', logId);
+            }
+
+        }
+
+        /***
+        *
+        * @param {Object} data
+        * @param {String} data.idNotificacion
+        * @param {String} data.tipo  tipo de request
+        * @param {String} data.folio folio a dar de baja
+        * @param {String} data.mes id del mes de baja
+        * @param {Number} data.estatus Id del estatus de la baja
+        * @param {Number} data.tipoPago tipo de pago
+        * @param {Number} data.montoPenalizacion monto por penalizacion
+        * @param {Number} data.montoPagar monto por pagar
+        * @param {Object} response
+        * @param {Number} response.code
+        * @param {Array} response.Info
+        */
+        function bajaFolio(data, response) {
+            let logId = null;
+            logId = createLog(data, response);
+            response.logId = logId;
+            try {
+                let folioId = recordFind("customrecord_cseg_folio_conauto", 'anyof', "externalid", data.folio);
+                if (folioId) {
+                    let mandatoryFields = ["mes", "estatus", "montoPagar", "montoPenalizacion", "idNotificacion"];
+                    checkMandatoryFields(data, mandatoryFields, response);
+                } else {
+                    response.code = 304;
+                    response.info.push("Folio: " + data.folio + " no existe en netsuite");
+                }
+            } catch (e) {
+                response.code = 400;
+                response.info.push(e);
+                handlerErrorLogRequest(e, logId);
             }
 
         }
@@ -519,24 +557,21 @@ define([
         }
 
         function checkMandatoryFields(data, mandatoryFields, response, line) {
-            for (let i = 0; i < mandatoryFields.length; i++) {
-                let field = mandatoryFields[i];
-                let value = data[field];
+            for (let mandatoryField of mandatoryFields) {
+                let value = data[mandatoryField];
                 if (!(value || parseFloat(value) === 0 || util.isBoolean(value))) {
                     response.code = 302;
-                    response.info.push((line ? ('LÍNEA ' + line + ': ') : '') + 'EL CAMPO ' + field + ' NO DEBE ESTAR VACÍO');
+                    response.info.push((line ? ('LÍNEA ' + line + ': ') : '') + 'EL CAMPO ' + mandatoryField + ' NO DEBE ESTAR VACÍO');
                 }
             }
         }
 
         function checkMandatoryFieldsDate(data, mandatoryFields, response, line) {
-            for (let i = 0; i < mandatoryFields.length; i++) {
-                let field = mandatoryFields[i];
-                let value = data[field] || '';
-                log.debug('value', value);
+            for (let mandatoryField of mandatoryFields) {
+                let value = data[mandatoryField] || '';
                 if (!validarFecha(value) && value) {
                     response.code = 310;
-                    response.info.push((line ? ('LÍNEA ' + line + ': ') : '') + 'EL CAMPO ' + field + ' NO TIENE UN FORMATO DE FECHA VÁLIDO: DD/MM/YYYY');
+                    response.info.push((line ? ('LÍNEA ' + line + ': ') : '') + 'EL CAMPO ' + mandatoryField + ' NO TIENE UN FORMATO DE FECHA VÁLIDO: DD/MM/YYYY');
                 }
             }
         }
