@@ -54,6 +54,7 @@ define([
                     'InteresesMoratorios': interesesMoratorios,
                     'ReservaPasivo': reservaPasivo,
                     'Bajas': bajaFolio,
+                    'ModificacionBajas': modificacionBajas,
                     //'AplicacionCobranzaASH' : AplicacionCobranza,
                 }
                 let callback = operations[data.tipo];
@@ -463,7 +464,7 @@ define([
         * @param {Number} data.montoPagar monto por pagar
         * @param {Object} response
         * @param {Number} response.code
-        * @param {Array} response.Info
+        * @param {Array} response.info
         */
         function bajaFolio(data, response) {
             let logId = null;
@@ -484,6 +485,33 @@ define([
                 handlerErrorLogRequest(e, logId);
             }
 
+        }
+
+        /***
+        *
+        * @param {Object} data
+        * @param {String} data.idNotificacion
+        * @param {String} data.tipo  tipo de request
+        * @param {String} data.folio folio para modificar baja
+        * @param {Number} data.saldoADevolver monto de saldo a devolver
+        * @param {Number} data.penalizacion monto de la penalización
+        * @param {Object} response
+        * @param {Number} response.code
+        * @param {Array} response.info
+        */
+        function modificacionBajas(data, response) {
+            let logId = null;
+            logId = createLog(data, response);
+            response.logId = logId;
+
+            let folioId = recordFind("customrecord_cseg_folio_conauto", 'anyof', "externalid", data.folio);
+            if (folioId) {
+                const mandatoryFields = ["folio", "saldoADevolver", "penalizacion", "estado"];
+                checkMandatoryFields(data, mandatoryFields, response);
+            } else {
+                response.code = 304;
+                response.info.push("Folio: " + data.folio + " no existe en netsuite");
+            }
         }
 
         function createLog(data, response) {
