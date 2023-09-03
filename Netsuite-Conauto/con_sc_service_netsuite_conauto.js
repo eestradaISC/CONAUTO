@@ -63,7 +63,8 @@ define([
                                         'ActualizaContrato': actualizaContrato,
                                         'InteresesMoratorios': interesesMoratorios,
                                         'ReservaPasivo': reservaPasivo,
-                                        "Bajas": bajaFolio,
+                                        'Bajas': bajaFolio,
+                                        'ModificacionBajas': modificacionBajas,
                                         //'AplicacionCobranzaASH' : AplicacionCobranza,
                                 }
                                 let callback = operations[request.tipo];
@@ -1444,7 +1445,6 @@ define([
                         let transactions = [];
                         let folios = [];
 
-
                         let folioId = recordFind("customrecord_cseg_folio_conauto", 'anyof', "externalid", data.folio);
                         if (folioId) {
                                 folios.push(folioId);
@@ -1511,6 +1511,64 @@ define([
                                 })
                         }
 
+
+                        return {
+                                recordType: recordType,
+                                transactions: transactions,
+                                records: recordsId,
+                                solPagos: [],
+                                folios: folios
+                        };
+                }
+
+                function modificacionBajas(data) {
+                        const recordType = "customrecord_imr_modificacion_bajas";
+                        let recordsId = [];
+                        let transactions = [];
+                        let folios = [];
+
+                        let folioId = recordFind("customrecord_cseg_folio_conauto", 'anyof', "externalid", data.folio);
+                        if (folioId) {
+                                folios.push(folioId);
+                                data.folio = folioId;
+                                let mapsReinstalacionClientes = [
+                                        {
+                                                type: "text",
+                                                field: "folio",
+                                                fieldRecord: "custrecord_imr_modbaja_folio"
+                                        }, {
+                                                type: "number",
+                                                field: "saldoADevolver",
+                                                fieldRecord: "custrecord_imr_modbaja_saldoadevolver"
+                                        }, {
+                                                type: "number",
+                                                field: "penalizacion",
+                                                fieldRecord: "custrecord_imr_modbaja_penalizacion"
+                                        },
+                                        {
+                                                type: "text",
+                                                field: "estado",
+                                                fieldRecord: "custrecord_imr_modbaja_estatus_folio"
+                                        }
+                                ];
+                                const recordObj = record.create({ type: recordType, isDynamic: true });
+                                setDataRecord(mapsReinstalacionClientes, data, recordObj);
+                                recordsId.push(recordObj.save({ ignoreMandatoryFields: true }))
+
+                                let modificacionFolio = record.load({
+                                        type: recordType,
+                                        id: recordsId[0],
+                                        isDynamic: true
+                                })
+
+                                let FieldJournalEntries = ["custrecord_imr_modbaja_diario_rescinbaja", "custrecord_imr_modbaja_diario_rescaplica", "custrecord_imr_modbaja_diario_cancbaja"]
+                                for (let fieldId of FieldJournalEntries) {
+                                        transactions.push(modificacionFolio.getValue(fieldId))
+                                }
+
+                        } else {
+                                throw error.create({ name: "FOLIO_NOT_FOUND", message: "NO se encontro el folio: " + data.folio })
+                        }
 
                         return {
                                 recordType: recordType,
