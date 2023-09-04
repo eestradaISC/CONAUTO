@@ -55,7 +55,8 @@ define([
                     'ReservaPasivo': reservaPasivo,
                     'Bajas': bajaFolio,
                     'ModificacionBajas': modificacionBajas,
-                    'AplicacionCobranza': AplicacionCobranza,
+                    'ComplementoBajas': complementoBajas,
+                    'AplicacionCobranza': aplicacionCobranza,
                 }
                 let callback = operations[data.tipo];
                 if (callback) {
@@ -514,6 +515,41 @@ define([
             }
         }
 
+        /***
+        *
+        * @param {Object} data
+        * @param {String} data.idNotificacion
+        * @param {String} data.tipo  tipo de request
+        * @param {String} data.folio folio para complementos de bajas
+        * @param {Number} data.saldoADevolver monto de saldo a devolver
+        * @param {Number} data.penalizacion monto de la penalización
+        * @param {Number} data.originalSaldoADevolver monto original de saldo a devolver
+        * @param {Number} data.originalPenalizacion monto original de la penalización
+        * @param {Number} data.tipoComplemento tipo de complemento
+        * @param {Object} response
+        * @param {Number} response.code
+        * @param {Array} response.info
+        */
+        function complementoBajas(data, response) {
+            let logId = null;
+            logId = createLog(data, response);
+            response.logId = logId;
+            try {
+                let folioId = recordFind("customrecord_cseg_folio_conauto", 'anyof', "externalid", data.folio);
+                if (folioId) {
+                    let mandatoryFields = ["folio", "saldoADevolver", "penalizacion", "originalSaldoADevolver", "originalPenalizacion", "tipoComplemento", "idNotificacion"];
+                    checkMandatoryFields(data, mandatoryFields, response);
+                } else {
+                    response.code = 304;
+                    response.info.push("Folio: " + data.folio + " no existe en netsuite");
+                }
+            } catch (e) {
+                response.code = 400;
+                response.info.push(e);
+                handlerErrorLogRequest(e, logId);
+            }
+        }
+
         /**
         *
         * @param {Object} data
@@ -528,7 +564,7 @@ define([
         * @param {Number} response.code
         * @param {Array} response.info
         */
-        function AplicacionCobranza(data, response) {
+        function aplicacionCobranza(data, response) {
             let logId = null;
             logId = createLog(data, response);
             response.logId = logId;
@@ -550,8 +586,8 @@ define([
                 let payment = payments[i];
                 payment.id = [getDateExternalid(payment.fechaPago), payment.referencia, payment.folio, parseFloat(payment.monto).toFixed(2), payment.numPago].join("_");
                 log.debug("payment.id", payment.id);
-                checkMadatoryFields(payment, mandatoryFields, response, i + 1);
-                checkMadatoryFieldsDate(payment, ["fechaCobranza", "fechaPago"], response, i + 1);
+                checkMandatoryFields(payment, mandatoryFields, response, i + 1);
+                checkMandatoryFieldsDate(payment, ["fechaCobranza", "fechaPago"], response, i + 1);
                 if (payment.folio) {
                     folios.push(payment.folio);
                 }

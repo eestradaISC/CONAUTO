@@ -66,7 +66,8 @@ define([
                                         'ReservaPasivo': reservaPasivo,
                                         'Bajas': bajaFolio,
                                         'ModificacionBajas': modificacionBajas,
-                                        'AplicacionCobranza': AplicacionCobranza,
+                                        'ComplementoBajas': complementoBajas,
+                                        'AplicacionCobranza': aplicacionCobranza,
                                 }
                                 let callback = operations[request.tipo];
                                 log.debug('callback', callback);
@@ -1590,6 +1591,72 @@ define([
                         };
                 }
 
+                function complementoBajas(data) {
+                        const recordType = "customrecord_imr_complemento_bajas";
+                        let recordsId = [];
+                        let transactions = [];
+                        let folios = [];
+
+
+                        let folioId = recordFind("customrecord_cseg_folio_conauto", 'anyof', "externalid", data.folio);
+
+                        if (folioId) {
+                                folios.push(folioId);
+                                data.folio = folioId;
+                                let mapsReinstalacionClientes = [
+                                        {
+                                                type: "text",
+                                                field: "folio",
+                                                fieldRecord: "custrecord_imr_compbajas_folio"
+                                        }, {
+                                                type: "number",
+                                                field: "saldoADevolver",
+                                                fieldRecord: "custrecord_imr_compbajas_saldoadevolver"
+                                        }, {
+                                                type: "number",
+                                                field: "penalizacion",
+                                                fieldRecord: "custrecord_imr_compbajas_penalizacion"
+                                        }, {
+                                                type: "number",
+                                                field: "originalPenalizacion",
+                                                fieldRecord: "custrecord_imr_compbajas_pena_origen"
+                                        }, {
+                                                type: "number",
+                                                field: "originalSaldoADevolver",
+                                                fieldRecord: "custrecord_imr_compbajas_saldadev_origen"
+                                        }, {
+                                                type: "text",
+                                                field: "tipoComplemento",
+                                                fieldRecord: "custrecord_imr_tipo_complemento_bajas"
+                                        }
+                                ];
+                                const recordObj = record.create({ type: recordType, isDynamic: true });
+                                setDataRecord(mapsReinstalacionClientes, data, recordObj);
+                                recordsId.push(recordObj.save({ ignoreMandatoryFields: true }))
+
+                                let complementosFolio = record.load({
+                                        type: recordType,
+                                        id: recordsId[0],
+                                        isDynamic: true
+                                })
+
+                                let FieldJournalEntries = ["custrecord_imr_compbajas_diario_can_comp", "custrecord_imr_compbajas_diario_prov", "custrecord_imr_compbajas_diario_prov_pag"]
+                                for (let fieldId of FieldJournalEntries) {
+                                        transactions.push(complementosFolio.getValue(fieldId))
+                                }
+
+                        } else {
+                                throw error.create({ name: "FOLIO_NOT_FOUND", message: "NO se encontro el folio: " + data.folio })
+                        }
+                        return {
+                                recordType: recordType,
+                                transactions: transactions,
+                                records: recordsId,
+                                solPagos: [],
+                                folios: folios
+                        };
+                }
+
                 /**
                  *
                  * @param {Object} data
@@ -1604,7 +1671,7 @@ define([
                  * @param {Number} response.code
                  * @param {Array} response.info
                  */
-                function AplicacionCobranza(data) {
+                function aplicacionCobranza(data) {
                         log.debug("Data aplicacion cobranza", data);
                         let records = [];
                         let errors = [];
