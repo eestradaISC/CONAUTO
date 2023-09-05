@@ -759,7 +759,7 @@ define([
                                                 });
                                                 customerObj.setValue({
                                                         fieldId: 'lastname',
-                                                        value: data.cliente.apellidoPaterno + ' ' + data.cliente.apellidoMaterno
+                                                        value: (data.cliente.apellidoMaterno) ? `${data.cliente.apellidoPaterno} ${data.cliente.apellidoMaterno}` : data.cliente.apellidoPaterno
                                                 });
                                         } else {
                                                 customerObj.setValue({
@@ -775,6 +775,16 @@ define([
                                                 {
                                                         'field': 'rfc',
                                                         'fieldRecord': 'custentity_imr_rfc_operacion',
+                                                        'type': 'text'
+                                                },
+                                                {
+                                                        'field': 'razon',
+                                                        'fieldRecord': 'custentity_razon_social',
+                                                        'type': 'text'
+                                                },
+                                                {
+                                                        'field': 'rf-clave',
+                                                        'fieldRecord': 'custentity_imr_fe40_regimenfiscal',
                                                         'type': 'text'
                                                 },
                                                 {

@@ -269,7 +269,7 @@ define([
                             let mandatoryFieldsCliente = ['nombre', 'rfc'];
                             if (data.cliente.esPersona) {
                                 mandatoryFieldsCliente.push('apellidoPaterno');
-                                mandatoryFieldsCliente.push('apellidoMaterno');
+                                // mandatoryFieldsCliente.push('apellidoMaterno');
                             }
                             checkMandatoryFieldsDate(data.cliente, ['fechaNacimiento'], response);
                             checkMandatoryFields(data.cliente, mandatoryFieldsCliente, response);
@@ -320,7 +320,7 @@ define([
                                 let mandatoryFieldsCliente = ['nombre', 'rfc'];
                                 if (data.cliente.esPersona) {
                                     mandatoryFieldsCliente.push('apellidoPaterno');
-                                    mandatoryFieldsCliente.push('apellidoMaterno');
+                                    // mandatoryFieldsCliente.push('apellidoMaterno');
                                 }
                                 checkMandatoryFieldsDate(data.cliente, ['fechaNacimiento'], response);
                                 checkMandatoryFields(data.cliente, mandatoryFieldsCliente, response);
