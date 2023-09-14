@@ -3,7 +3,7 @@ Scripts utilizados por CONAUTO en NetSuite
 
 
 # Servicios actuales
-- PrimerasCuotasASH
+- PrimerasCuotas
 - SolicitudPago
 - PolizaIntegrantes
 - ActualizaContrato
