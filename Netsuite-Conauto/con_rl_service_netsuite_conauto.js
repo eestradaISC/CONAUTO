@@ -55,7 +55,7 @@ define([
                     'ReservaPasivo': reservaPasivo,
                     'Bajas': bajaFolio,
                     'ModificacionBajas': modificacionBajas,
-                    'AplicacionCobranzaASH': AplicacionCobranza,
+                    'AplicacionCobranza': AplicacionCobranza,
                 }
                 let callback = operations[data.tipo];
                 if (callback) {
