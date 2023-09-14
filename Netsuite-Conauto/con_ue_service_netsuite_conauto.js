@@ -60,7 +60,7 @@ define([
             if (success && !processed) {
                 try {
                     switch (logType) {
-                        case 'PrimerasCuotasASH':
+                        case 'PrimerasCuotas':
                             let taskServicePC = task.create({
                                 taskType: task.TaskType.SCHEDULED_SCRIPT,
                                 scriptId: 'customscript_con_sc_service_ns_conauto',

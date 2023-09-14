@@ -46,7 +46,7 @@ define([
             try {
                 let data = request || {};
                 let operations = {
-                    'PrimerasCuotasASH': primerasCuotas,
+                    'PrimerasCuotas': primerasCuotas,
                     'SolicitudPago': solicitudPago,
                     'PolizaIntegrantes': polizaIntegrantes,
                     'ActualizaContrato': actualizaContrato,

@@ -58,7 +58,7 @@ define([
                                 let request = getRequestLog(logId);
 
                                 let operations = {
-                                        'PrimerasCuotasASH': primerasCuotas,
+                                        'PrimerasCuotas': primerasCuotas,
                                         'SolicitudPago': solicitudPago,
                                         'ActualizaContrato': actualizaContrato,
                                         'InteresesMoratorios': interesesMoratorios,
