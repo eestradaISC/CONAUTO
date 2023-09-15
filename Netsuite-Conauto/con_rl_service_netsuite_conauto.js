@@ -55,7 +55,7 @@ define([
                     'ReservaPasivo': reservaPasivo,
                     'Bajas': bajaFolio,
                     'ModificacionBajas': modificacionBajas,
-                    //'AplicacionCobranzaASH' : AplicacionCobranza,
+                    'AplicacionCobranza': AplicacionCobranza,
                 }
                 let callback = operations[data.tipo];
                 if (callback) {
@@ -514,6 +514,66 @@ define([
             }
         }
 
+        /**
+        *
+        * @param {Object} data
+        * @param {String} data.tipo  tipo de request
+        * @param {Object[]} data.pagos  arreglo de pagos
+        * @param {String} data.pagos[].referencia  referencia del pago
+        * @param {String} data.pagos[].fecha  fecha del pago formato DD/MM/YYYY
+        * @param {String} data.pagos[].folio  folio conauto
+        * @param {Number} data.pagos[].monto  importe del pago
+        * @param {String} data.pagos[].metodo  forma de pago
+        * @param {Object} response
+        * @param {Number} response.code
+        * @param {Array} response.info
+        */
+        function AplicacionCobranza(data, response) {
+            let logId = null;
+            logId = createLog(data, response);
+            response.logId = logId;
+
+            let payments = data.pagos || [];
+            if (payments.length == 0) {
+                response.code = 303;
+                response.info.push("No se encontraron pagos a regitrar en la petición");
+                return;
+            }
+            let preferences = conautoPreferences.get();
+            let folios = [];
+            let mandatoryFields = ["referencia", "fechaCobranza", "fechaPago", "folio", "monto", "formaPago", "numPago", "id"];
+            log.debug("payments", payments);
+            let d = new Date();
+            let paymentTime = d.getTime();
+            log.debug("PaymentTime", paymentTime)
+            for (let i = 0; i < payments.length; i++) {
+                let payment = payments[i];
+                payment.id = [getDateExternalid(payment.fechaPago), payment.referencia, payment.folio, parseFloat(payment.monto).toFixed(2), payment.numPago].join("_");
+                log.debug("payment.id", payment.id);
+                checkMadatoryFields(payment, mandatoryFields, response, i + 1);
+                checkMadatoryFieldsDate(payment, ["fechaCobranza", "fechaPago"], response, i + 1);
+                if (payment.folio) {
+                    folios.push(payment.folio);
+                }
+            }
+
+            for (let i = 0; i < payments.length; i++) {
+                let payment = payments[i];
+
+                if (payment.referencia) {
+                    let account = preferences.getPreference({
+                        key: "CB1P",
+                        reference: (payment.referencia || '').substring(0, 2)
+                    });
+                    if (!account) {
+                        response.code = 305;
+                        response.info.push("Linea " + (i + 1) + ": Referencia \"" + (payment.referencia || '').substring(0, 2) + "\" no valida");
+                    }
+                }
+            }
+
+        }
+
         function createLog(data, response) {
             let logId = null;
             try {
@@ -660,6 +720,24 @@ define([
                 });
             }
             return id;
+        }
+
+        function getDateExternalid(value) {
+            let date = stringToDateConauto(value);
+            if (date) {
+                return date.getDate() + "/" + (date.getMonth() + 1) + "/" + date.getFullYear();
+            } else {
+                return "";
+            }
+        }
+
+        function stringToDateConauto(value) {
+            if (value) {
+                let arrayDate = value.split("/");
+                return new Date(arrayDate[2], arrayDate[1] - 1, arrayDate[0]);
+            } else {
+                return null;
+            }
         }
 
         function handlerErrorLogRequest(e, logId) {
