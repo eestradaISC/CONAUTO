@@ -529,6 +529,10 @@ define([
         * @param {Array} response.info
         */
         function AplicacionCobranza(data, response) {
+            let logId = null;
+            logId = createLog(data, response);
+            response.logId = logId;
+
             let payments = data.pagos || [];
             if (payments.length == 0) {
                 response.code = 303;

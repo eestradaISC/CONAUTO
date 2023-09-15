@@ -52,7 +52,8 @@ define([
                                 transactions: [],
                                 records: [],
                                 solPagos: [],
-                                // folios: [] problemas para setear letios a corregir
+                                folios: [],
+                                errors: []
                         };
                         try {
                                 let request = getRequestLog(logId);
@@ -1586,6 +1587,132 @@ define([
                                 records: recordsId,
                                 solPagos: [],
                                 folios: folios
+                        };
+                }
+
+                /**
+                 *
+                 * @param {Object} data
+                 * @param {String} data.tipo  tipo de request
+                 * @param {Object[]} data.pagos  arreglo de pagos
+                 * @param {String} data.pagos[].referencia  referencia del pago
+                 * @param {String} data.pagos[].fecha  fecha del pago formato DD/MM/YYYY
+                 * @param {String} data.pagos[].folio  folio conauto
+                 * @param {Number} data.pagos[].monto  importe del pago
+                 * @param {String} data.pagos[].metodo  forma de pago
+                 * @param {Object} response
+                 * @param {Number} response.code
+                 * @param {Array} response.info
+                 */
+                function AplicacionCobranza(data) {
+                        log.debug("Data aplicacion cobranza", data);
+                        let records = [];
+                        let errors = [];
+                        let recordType = "customrecord_imr_pagos_amortizacion";
+                        let payments = data.pagos || [];
+                        if (payments.length == 0) {
+                                throw error.create({
+                                        name: "EMPTY_PAYMENT_LIST_FIRSTPAYMENT",
+                                        message: "La lista de pagos esta vacia"
+                                })
+                        }
+                        let mandatoryFields = ["referencia", "fechaCobranza", "fechaPago", "folio", "monto", "formaPago", "numPago"];
+                        for (let payment of payments) {
+                                checkMandatoryFields(payment, mandatoryFields, i + 1, errors);
+                        }
+                        if (errors.length == 0) {
+                                let fields = [
+                                        {
+                                                type: "text",
+                                                field: "folio",
+                                                fieldRecord: "custrecord_imr_pa_folio_texto"
+                                        },
+                                        {
+                                                type: "number",
+                                                field: "monto",
+                                                fieldRecord: "custrecord_imr_pa_importe"
+                                        },
+                                        {
+                                                type: "text",
+                                                field: "formaPago",
+                                                fieldRecord: "custrecord_imr_pa_forma_pago",
+                                                callback: function (value) { return getFormaPago(value) }
+                                        },
+                                        {
+                                                type: "date",
+                                                field: "fechaCobranza",
+                                                fieldRecord: "custrecord_imr_pa_fecha"
+                                        },
+                                        {
+                                                type: "date",
+                                                field: "fechaPago",
+                                                fieldRecord: "custrecord_imr_pa_fecha_pago"
+                                        },
+                                        {
+                                                type: "text",
+                                                field: "referencia",
+                                                fieldRecord: "custrecord_imr_pa_referencia",
+                                                callback: function (value) {
+                                                        return (value || '').substring(0, 2)
+                                                }
+                                        },
+                                        {
+                                                type: "text",
+                                                field: "referencia",
+                                                fieldRecord: "custrecord_imr_pa_referencia_completa"
+                                        },
+                                        {
+                                                type: "text",
+                                                field: "id",
+                                                fieldRecord: "externalid"
+                                        },
+                                        {
+                                                type: "text",
+                                                field: "numPago",
+                                                fieldRecord: "custrecord_conauto_num_payment_service"
+                                        }
+                                ]
+                                for (let payment of payments) {
+                                        log.debug("a crear payment", payment);
+                                        let recordPagoObj = record.create({
+                                                type: recordType,
+                                                isDynamic: true
+                                        });
+                                        for (let field of fields) {
+                                                let fieldId = field.fieldRecord;
+                                                let value = payment[field.field];
+                                                if (field.callback) {
+                                                        value = field.callback(value);
+                                                }
+                                                value = getValueFormat(field.type, value);
+                                                recordPagoObj.setValue({
+                                                        fieldId: fieldId,
+                                                        value: value
+                                                });
+                                        }
+                                        try {
+                                                let recordPagoId = recordPagoObj.save({
+                                                        ignoreMandatoryFields: true
+                                                });
+                                                records.push(recordPagoId);
+                                        } catch (e) {
+                                                errors.push(e.toString())
+                                        }
+                                }
+                        } else {
+                                throw error.create({
+                                        name: "DATA_ERROR_PAYMENTS",
+                                        message: errors.join("\n")
+                                })
+                        }
+
+                        return {
+                                recordType: recordType,
+                                transactions: transactions,
+                                records: records,
+                                solPagos: [],
+                                folios: folios,
+                                errors: errors
                         };
                 }
 
