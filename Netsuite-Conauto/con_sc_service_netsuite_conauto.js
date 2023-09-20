@@ -1676,6 +1676,7 @@ define([
                         let records = [];
                         let errors = [];
                         let recordType = "customrecord_imr_pagos_amortizacion";
+
                         let payments = data.pagos || [];
                         if (payments.length == 0) {
                                 throw error.create({
@@ -1683,9 +1684,11 @@ define([
                                         message: "La lista de pagos esta vacia"
                                 })
                         }
-                        let mandatoryFields = ["referencia", "fechaCobranza", "fechaPago", "folio", "monto", "formaPago", "numPago"];
+                        let mandatoryFields = ["referencia", "fechaCobranza", "fechaPago", "folio", "monto", "aportacion", "total_pagar", "formaPago", "numPago"];
+                        let line = 0;
                         for (let payment of payments) {
-                                checkMandatoryFields(payment, mandatoryFields, i + 1, errors);
+                                line++;
+                                checkMandatoryFields(payment, mandatoryFields, line, errors);
                         }
                         if (errors.length == 0) {
                                 let fields = [
@@ -1698,6 +1701,36 @@ define([
                                                 type: "number",
                                                 field: "monto",
                                                 fieldRecord: "custrecord_imr_pa_importe"
+                                        },
+                                        {
+                                                type: "number",
+                                                field: "aportacion",
+                                                fieldRecord: "custrecord_conauto_aportacion"
+                                        },
+                                        {
+                                                type: "number",
+                                                field: "gastos",
+                                                fieldRecord: "custrecord_conauto_gastos"
+                                        },
+                                        {
+                                                type: "number",
+                                                field: "iva",
+                                                fieldRecord: "custrecord_conauto_iva"
+                                        },
+                                        {
+                                                type: "number",
+                                                field: "seguro_auto",
+                                                fieldRecord: "custrecord_conauto_seguro_auto"
+                                        },
+                                        {
+                                                type: "number",
+                                                field: "seguro_vida",
+                                                fieldRecord: "custrecord_conauto_seguro_vida"
+                                        },
+                                        {
+                                                type: "number",
+                                                field: "total_pagar",
+                                                fieldRecord: "custrecord_conauto_total_pagar"
                                         },
                                         {
                                                 type: "text",
@@ -1775,10 +1808,10 @@ define([
 
                         return {
                                 recordType: recordType,
-                                transactions: transactions,
+                                transactions: [],
                                 records: records,
                                 solPagos: [],
-                                folios: folios,
+                                folios: [],
                                 errors: errors
                         };
                 }

@@ -577,15 +577,27 @@ define([
             }
             let preferences = conautoPreferences.get();
             let folios = [];
-            let mandatoryFields = ["referencia", "fechaCobranza", "fechaPago", "folio", "monto", "formaPago", "numPago", "id"];
-            log.debug("payments", payments);
+            let mandatoryFields = ["referencia", "fechaCobranza", "fechaPago", "folio", "monto", "aportacion", "total_pagar", "formaPago", "numPago", "id"];
+            let currencyFields = ["aportacion", "gastos", "iva", "seguro_auto", "seguro_vida"]
+
             let d = new Date();
             let paymentTime = d.getTime();
             log.debug("PaymentTime", paymentTime)
             for (let i = 0; i < payments.length; i++) {
+                let total = 0;
+
+
                 let payment = payments[i];
+                for (let currencyField of currencyFields) {
+                    total += payment[currencyField]
+                }
+                if (payment["total_pagar"] == total) {
+                    response.code = 303;
+                    response.info.push("La suma de los montos no coinciden con el total a pagar");
+                    return;
+                }
                 payment.id = [getDateExternalid(payment.fechaPago), payment.referencia, payment.folio, parseFloat(payment.monto).toFixed(2), payment.numPago].join("_");
-                log.debug("payment.id", payment.id);
+
                 checkMandatoryFields(payment, mandatoryFields, response, i + 1);
                 checkMandatoryFieldsDate(payment, ["fechaCobranza", "fechaPago"], response, i + 1);
                 if (payment.folio) {
