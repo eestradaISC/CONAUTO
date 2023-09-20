@@ -57,6 +57,7 @@ define([
                     'ModificacionBajas': modificacionBajas,
                     'ComplementoBajas': complementoBajas,
                     'AplicacionCobranza': aplicacionCobranza,
+                    'ProvisionCartera': provisionCartera,
                 }
                 let callback = operations[data.tipo];
                 if (callback) {
@@ -554,12 +555,23 @@ define([
         *
         * @param {Object} data
         * @param {String} data.tipo  tipo de request
+        * @param {Number} data.idNotificacion id de la cual proviene la petición
         * @param {Object[]} data.pagos  arreglo de pagos
         * @param {String} data.pagos[].referencia  referencia del pago
-        * @param {String} data.pagos[].fecha  fecha del pago formato DD/MM/YYYY
+        * @param {String} data.pagos[].fechaCobranza  fecha del pago formato DD/MM/YYYY
+        * @param {String} data.pagos[].fechaPago  fecha del pago formato DD/MM/YYYY
         * @param {String} data.pagos[].folio  folio conauto
         * @param {Number} data.pagos[].monto  importe del pago
-        * @param {String} data.pagos[].metodo  forma de pago
+        * @param {String} data.pagos[].formaPago  forma de pago
+        * @param {String} data.pagos[].numPago  número consecutivo del pago
+        * @param {String} data.pagos[].grupo identificador del grupo
+        * @param {String} data.pagos[].cliente ID del cliente
+        * @param {Number} data.pagos[].aportacion Monto de la aportacion
+        * @param {Number} data.pagos[].gastos Monto neto de los gastos
+        * @param {Number} data.pagos[].iva IVA obtenido de los gastos
+        * @param {Number} data.pagos[].seguro_auto Monto utilizado para el seguro de auto
+        * @param {Number} data.pagos[].seguro_vida Monto utilizado para el seguro de vida
+        * @param {Number} data.pagos[].total_pagar Suma de todos los montos excluyendo monto
         * @param {Object} response
         * @param {Number} response.code
         * @param {Array} response.info
@@ -619,6 +631,84 @@ define([
                     }
                 }
             }
+
+        }
+
+        /**
+        *
+        * @param {Object} data
+        * @param {String} data.tipo  tipo de request
+        * @param {Number} data.idNotificacion id de la cual proviene la petición
+        * @param {Object[]} data.pagos  arreglo de pagos
+        * @param {String} data.pagos[].fecha  fecha del pago formato DD/MM/YYYY
+        * @param {Number} data.pagos[].status TODO: Por definir
+        * @param {String} data.pagos[].folioContrato  folio conauto
+        * @param {String} data.pagos[].grupo identificador del grupo
+        * @param {Number} data.pagos[].integrante TODO: Por definiri
+        * @param {Number} data.pagos[].total_pagar Suma de todos los montos
+        * @param {Number} data.pagos[].cliente TODO: Por definir
+        * @param {Number} data.pagos[].aportacion Monto de la aportacion
+        * @param {Number} data.pagos[].gastos Monto neto de los gastos
+        * @param {Number} data.pagos[].iva IVA obtenido de los gastos
+        * @param {Number} data.pagos[].seguro_auto Monto utilizado para el seguro de auto
+        * @param {Number} data.pagos[].seguro_vida Monto utilizado para el seguro de vida
+        * @param {Object} response
+        * @param {Number} response.code
+        * @param {Array} response.info
+        */
+        function provisionCartera(data, response) {
+            let logId = null;
+            logId = createLog(data, response);
+            response.logId = logId;
+
+            let payments = data.pagos || [];
+            if (payments.length == 0) {
+                response.code = 303;
+                response.info.push("No se encontraron pagos a regitrar en la petición");
+                return;
+            }
+            let preferences = conautoPreferences.get();
+            let folios = [];
+            let mandatoryFields = ["fecha", "status", "folioContrato", "grupo", "integrante", "total_pagar", "cliente", "aportacion"];
+            let currencyFields = ["aportacion", "gastos", "iva", "seguro_auto", "seguro_vida"]
+
+            for (let i = 0; i < payments.length; i++) {
+                let total = 0;
+
+
+                let payment = payments[i];
+                for (let currencyField of currencyFields) {
+                    total += payment[currencyField]
+                }
+                if (payment["total_pagar"] == total) {
+                    response.code = 303;
+                    response.info.push("La suma de los montos no coinciden con el total a pagar");
+                    return;
+                }
+                payment.id = [getDateExternalid(payment.fechaPago), payment.referencia, payment.folio, parseFloat(payment.monto).toFixed(2), payment.numPago].join("_");
+
+                checkMandatoryFields(payment, mandatoryFields, response, i + 1);
+                checkMandatoryFieldsDate(payment, ["fecha"], response, i + 1);
+                if (payment.folio) {
+                    folios.push(payment.folio);
+                }
+            }
+
+            // TODO: Se utilizara posteriormente en caso de necesitar referencia
+            // for (let i = 0; i < payments.length; i++) {
+            //     let payment = payments[i];
+
+            //     if (payment.referencia) {
+            //         let account = preferences.getPreference({
+            //             key: "CB1P",
+            //             reference: (payment.referencia || '').substring(0, 2)
+            //         });
+            //         if (!account) {
+            //             response.code = 305;
+            //             response.info.push("Linea " + (i + 1) + ": Referencia \"" + (payment.referencia || '').substring(0, 2) + "\" no valida");
+            //         }
+            //     }
+            // }
 
         }
 

@@ -68,6 +68,7 @@ define([
                                         'ModificacionBajas': modificacionBajas,
                                         'ComplementoBajas': complementoBajas,
                                         'AplicacionCobranza': aplicacionCobranza,
+                                        'ProvisionCartera': provisionCartera,
                                 }
                                 let callback = operations[request.tipo];
                                 log.debug('callback', callback);
@@ -1658,19 +1659,30 @@ define([
                 }
 
                 /**
-                 *
-                 * @param {Object} data
-                 * @param {String} data.tipo  tipo de request
-                 * @param {Object[]} data.pagos  arreglo de pagos
-                 * @param {String} data.pagos[].referencia  referencia del pago
-                 * @param {String} data.pagos[].fecha  fecha del pago formato DD/MM/YYYY
-                 * @param {String} data.pagos[].folio  folio conauto
-                 * @param {Number} data.pagos[].monto  importe del pago
-                 * @param {String} data.pagos[].metodo  forma de pago
-                 * @param {Object} response
-                 * @param {Number} response.code
-                 * @param {Array} response.info
-                 */
+                *
+                * @param {Object} data
+                * @param {String} data.tipo  tipo de request
+                * @param {Number} data.idNotificacion id de la cual proviene la petición
+                * @param {Object[]} data.pagos  arreglo de pagos
+                * @param {String} data.pagos[].referencia  referencia del pago
+                * @param {String} data.pagos[].fechaCobranza  fecha del pago formato DD/MM/YYYY
+                * @param {String} data.pagos[].fechaPago  fecha del pago formato DD/MM/YYYY
+                * @param {String} data.pagos[].folio  folio conauto
+                * @param {Number} data.pagos[].monto  importe del pago
+                * @param {String} data.pagos[].formaPago  forma de pago
+                * @param {String} data.pagos[].numPago  número consecutivo del pago
+                * @param {String} data.pagos[].grupo identificador del grupo
+                * @param {String} data.pagos[].cliente ID del cliente
+                * @param {Number} data.pagos[].aportacion Monto de la aportacion
+                * @param {Number} data.pagos[].gastos Monto neto de los gastos
+                * @param {Number} data.pagos[].iva IVA obtenido de los gastos
+                * @param {Number} data.pagos[].seguro_auto Monto utilizado para el seguro de auto
+                * @param {Number} data.pagos[].seguro_vida Monto utilizado para el seguro de vida
+                * @param {Number} data.pagos[].total_pagar Suma de todos los montos excluyendo monto
+                * @param {Object} response
+                * @param {Number} response.code
+                * @param {Array} response.info
+                */
                 function aplicacionCobranza(data) {
                         log.debug("Data aplicacion cobranza", data);
                         let records = [];
@@ -1806,6 +1818,64 @@ define([
                                 })
                         }
 
+                        return {
+                                recordType: recordType,
+                                transactions: [],
+                                records: records,
+                                solPagos: [],
+                                folios: [],
+                                errors: errors
+                        };
+                }
+
+                /**
+                *
+                * @param {Object} data
+                * @param {String} data.tipo  tipo de request
+                * @param {Number} data.idNotificacion id de la cual proviene la petición
+                * @param {Object[]} data.pagos  arreglo de pagos
+                * @param {String} data.pagos[].fecha  fecha del pago formato DD/MM/YYYY
+                * @param {Number} data.pagos[].status TODO: Por definir
+                * @param {String} data.pagos[].folioContrato  folio conauto
+                * @param {String} data.pagos[].grupo identificador del grupo
+                * @param {Number} data.pagos[].integrante TODO: Por definiri
+                * @param {Number} data.pagos[].total_pagar Suma de todos los montos
+                * @param {Number} data.pagos[].cliente TODO: Por definir
+                * @param {Number} data.pagos[].aportacion Monto de la aportacion
+                * @param {Number} data.pagos[].gastos Monto neto de los gastos
+                * @param {Number} data.pagos[].iva IVA obtenido de los gastos
+                * @param {Number} data.pagos[].seguro_auto Monto utilizado para el seguro de auto
+                * @param {Number} data.pagos[].seguro_vida Monto utilizado para el seguro de vida
+                * @param {Object} response
+                * @param {Number} response.code
+                * @param {Array} response.info
+                */
+                function provisionCartera(data, response) {
+                        let records = [];
+                        let errors = [];
+                        let recordType = "poragregar"; //TODO: Aún se debe definir la lógica
+
+                        let payments = data.pagos || [];
+                        if (payments.length == 0) {
+                                throw error.create({
+                                        name: "EMPTY_PAYMENT_LIST_FIRSTPAYMENT",
+                                        message: "La lista de pagos esta vacia"
+                                })
+                        }
+                        let mandatoryFields = ["fecha", "status", "folioContrato", "grupo", "integrante", "total_pagar", "cliente", "aportacion"];
+                        let line = 0;
+                        for (let payment of payments) {
+                                line++;
+                                checkMandatoryFields(payment, mandatoryFields, line, errors);
+                        }
+                        if (errors.length == 0) {
+                                //TODO: Lógica para registrar el pago
+                        } else {
+                                throw error.create({
+                                        name: "DATA_ERROR_PAYMENTS",
+                                        message: errors.join("\n")
+                                })
+                        }
                         return {
                                 recordType: recordType,
                                 transactions: [],
