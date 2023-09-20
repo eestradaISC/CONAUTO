@@ -150,6 +150,16 @@ define([
                             });
                             taskServiceApC.submit();
                             break;
+                        case 'ProvisionCartera':
+                            let taskServicePCar = task.create({
+                                taskType: task.TaskType.SCHEDULED_SCRIPT,
+                                scriptId: 'customscript_con_sc_service_ns_conauto',
+                                params: {
+                                    custscript_log_service_id: logId
+                                }
+                            });
+                            taskServicePCar.submit();
+                            break;
                     }
                 } catch (e) {
                     handlerErrorLogRequest(e.message.toString(), logId, recordType)
