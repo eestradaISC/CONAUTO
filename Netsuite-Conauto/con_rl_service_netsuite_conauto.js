@@ -603,7 +603,7 @@ define([
                 for (let currencyField of currencyFields) {
                     total += payment[currencyField]
                 }
-                if (payment["total_pagar"] == total) {
+                if (payment["total_pagar"] != total) {
                     response.code = 303;
                     response.info.push("La suma de los montos no coinciden con el total a pagar");
                     return;
@@ -680,9 +680,9 @@ define([
                 for (let currencyField of currencyFields) {
                     total += payment[currencyField]
                 }
-                if (payment["total_pagar"] == total) {
+                if (payment["total_pagar"] != total) {
                     response.code = 303;
-                    response.info.push("La suma de los montos no coinciden con el total a pagar");
+                    response.info.push(`La suma de los montos no coinciden con el total a pagar |TOTAL A PAGAR: ${payment["total_pagar"]} - SUMA DE MONTOS: ${total}|`);
                     return;
                 }
                 payment.id = [getDateExternalid(payment.fechaPago), payment.referencia, payment.folio, parseFloat(payment.monto).toFixed(2), payment.numPago].join("_");
