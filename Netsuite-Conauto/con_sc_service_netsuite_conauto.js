@@ -1668,6 +1668,7 @@ define([
                 * @param {String} data.pagos[].fechaCobranza  fecha del pago formato DD/MM/YYYY
                 * @param {String} data.pagos[].fechaPago  fecha del pago formato DD/MM/YYYY
                 * @param {String} data.pagos[].folio  folio conauto
+                * @param {String} data.pagos[].status  status del cliente conauto
                 * @param {Number} data.pagos[].monto  importe del pago
                 * @param {String} data.pagos[].formaPago  forma de pago
                 * @param {String} data.pagos[].numPago  número consecutivo del pago
@@ -1696,7 +1697,7 @@ define([
                                         message: "La lista de pagos esta vacia"
                                 })
                         }
-                        let mandatoryFields = ["referencia", "fechaCobranza", "fechaPago", "folio", "monto", "aportacion", "total_pagar", "formaPago", "numPago"];
+                        let mandatoryFields = ["referencia", "fechaCobranza", "status", "fechaPago", "folio", "monto", "aportacion", "total_pagar", "formaPago", "numPago"];
                         let line = 0;
                         for (let payment of payments) {
                                 line++;
@@ -1782,10 +1783,14 @@ define([
                                                 type: "text",
                                                 field: "numPago",
                                                 fieldRecord: "custrecord_conauto_num_payment_service"
+                                        },
+                                        {
+                                                type: "number",
+                                                field: "status",
+                                                fieldRecord: "custrecord_imr_pa_estado_folio"
                                         }
                                 ]
                                 for (let payment of payments) {
-                                        log.debug("a crear payment", payment);
                                         let recordPagoObj = record.create({
                                                 type: recordType,
                                                 isDynamic: true
