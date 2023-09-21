@@ -561,6 +561,7 @@ define([
         * @param {String} data.pagos[].fechaCobranza  fecha del pago formato DD/MM/YYYY
         * @param {String} data.pagos[].fechaPago  fecha del pago formato DD/MM/YYYY
         * @param {String} data.pagos[].folio  folio conauto
+        * @param {String} data.pagos[].status  status del cliente conauto
         * @param {Number} data.pagos[].monto  importe del pago
         * @param {String} data.pagos[].formaPago  forma de pago
         * @param {String} data.pagos[].numPago  número consecutivo del pago
@@ -589,8 +590,7 @@ define([
             }
             let preferences = conautoPreferences.get();
             let folios = [];
-            let mandatoryFields = ["referencia", "fechaCobranza", "fechaPago", "folio", "monto", "aportacion", "total_pagar", "formaPago", "numPago", "id"];
-            let currencyFields = ["aportacion", "gastos", "iva", "seguro_auto", "seguro_vida"]
+            let mandatoryFields = ["referencia", "fechaCobranza", "fechaPago", "folio", "status", "monto", "aportacion", "total_pagar", "formaPago", "numPago", "id"];
 
             let d = new Date();
             let paymentTime = d.getTime();
@@ -600,14 +600,6 @@ define([
 
 
                 let payment = payments[i];
-                for (let currencyField of currencyFields) {
-                    total += payment[currencyField]
-                }
-                if (payment["total_pagar"] != total) {
-                    response.code = 303;
-                    response.info.push("La suma de los montos no coinciden con el total a pagar");
-                    return;
-                }
                 payment.id = [getDateExternalid(payment.fechaPago), payment.referencia, payment.folio, parseFloat(payment.monto).toFixed(2), payment.numPago].join("_");
 
                 checkMandatoryFields(payment, mandatoryFields, response, i + 1);

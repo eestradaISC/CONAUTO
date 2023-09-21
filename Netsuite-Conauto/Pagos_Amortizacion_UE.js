@@ -504,14 +504,14 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                         createJournalCancelacionCXP(context.newRecord.id, preferences);
                         createJournalCancelacionSeguroAuto(context.newRecord.id, preferences);
                         createCreditMemo(context.newRecord.id, preferences);
-                        createJournalCartera(context.newRecord.id, preferences);
+                        createJournalCartera(context.newRecord.id, preferences, montosReparto);
                     }
                 }
             }
         }
 
 
-        function createJournalCartera(idPago, preferences) {
+        function createJournalCartera(idPago, preferences, montosReparto) {
             try {
                 log.error("createJournalCartera")
                 let pagoObj = record.load({
@@ -564,50 +564,21 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                 let grupoText = pagoObj.getText({
                     fieldId: "custrecord_imr_pa_grupo"
                 });
-                /*let fields = ["custrecord_imr_pre_gastos","custrecord_imr_pre_iva","custrecord_imr_pre_seguro_vida","custrecord_imr_pre_seguro_auto",
-                    "custrecord_imr_pre_aportacion","custrecord_imr_pre_saldo_favor"];*/ //L.R.M.R. 26/08/2021 Se solicita ya no aparezca el monto de saldo a favor en el diario de cartera.
-                let fields = ["custrecord_imr_pre_gastos", "custrecord_imr_pre_iva", "custrecord_imr_pre_seguro_vida", "custrecord_imr_pre_seguro_auto",
-                    "custrecord_imr_pre_aportacion"];
+
+                for (let concepto in montosReparto) {
+                    total += montosReparto[concepto];
+                }
+
                 let mapClass = {
-                    "custrecord_imr_pre_gastos": "1",
-                    "custrecord_imr_pre_iva": "1",
-                    "custrecord_imr_pre_seguro_vida": "2",
-                    "custrecord_imr_pre_seguro_auto": "3",
-                    "custrecord_imr_pre_aportacion": "4",
-                    "custrecord_imr_pre_saldo_favor": "5",
+                    "gastos": "1",
+                    "seguroVida": "2",
+                    "seguroAuto": "3",
+                    "aportacion": "4",
+                    "saldoFavor": "5",
                 }
-                let countLinePrelacion = pagoObj.getLineCount({
-                    sublistId: "recmachcustrecord_imr_pre_pago"
-                });
-                let lineObj = {};
-                for (let i = 0; i < countLinePrelacion; i++) {
-                    let tipoPrelacion = pagoObj.getSublistValue({
-                        sublistId: "recmachcustrecord_imr_pre_pago",
-                        fieldId: "custrecord_imr_pre_tipo_prelacion",
-                        line: i
-                    });
-                    if (!tipoPrelacion) {
-                        let totalLine = 0;
-                        for (let j = 0; j < fields.length; j++) {
-                            let amountField = parseFloat(pagoObj.getSublistValue({
-                                sublistId: "recmachcustrecord_imr_pre_pago",
-                                fieldId: fields[j],
-                                line: i
-                            })) || 0;
-                            totalLine += amountField;
-                            lineObj[fields[j]] = lineObj[fields[j]] || 0;
-                            lineObj[fields[j]] += amountField;
-                        }
-                        total += totalLine;
-                    }
-                }
-                log.error({
-                    title: "createJournalcancelacionDevolucionCartera",
-                    details: JSON.stringify({
-                        journalCartera: journalCartera,
-                        total: total,
-                        estadoFolio: estadoFolio
-                    })
+                log.audit({
+                    title: "Datos antes de entrar",
+                    details: `journalCartera: ${journalCartera}    total: ${total}    estadoFolio: ${estadoFolio}`
                 })
                 if (!journalCartera && total != 0 && estadoFolio == '4') {
                     let diarioObj = record.create({
@@ -654,31 +625,29 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                         key: "PCP",
                         reference: "carteraCredito"
                     });
-                    for (let i = 0; i < fields.length; i++) {
-                        let field = fields[i];
-                        let value = Math.abs(lineObj[field] || 0);
-                        if (value) {
-                            addLineJournal(diarioObj, cuentaDebito, false, value.toFixed(2), {
-                                memo: memo,
-                                custcol_referencia_conauto: referenceCompleta,
-                                custcol_metodo_pago_conauto: formaPago,
-                                custcol_folio_texto_conauto: folioText,
-                                cseg_folio_conauto: folioId,
-                                cseg_grupo_conauto: grupoId,
-                                entity: cliente,
-                                class: mapClass[field]
-                            });
-                            addLineJournal(diarioObj, cuentaCredito, true, value.toFixed(2), {
-                                memo: memo,
-                                custcol_referencia_conauto: referenceCompleta,
-                                custcol_metodo_pago_conauto: formaPago,
-                                custcol_folio_texto_conauto: folioText,
-                                cseg_folio_conauto: folioId,
-                                cseg_grupo_conauto: grupoId,
-                                entity: cliente,
-                                class: mapClass[field]
-                            });
-                        }
+                    for (let concepto in montosReparto) {
+                        let monto = montosReparto[concepto];
+                        if (monto == 0) continue;
+                        addLineJournal(diarioObj, cuentaDebito, false, monto, {
+                            memo: memo,
+                            custcol_referencia_conauto: referenceCompleta,
+                            custcol_metodo_pago_conauto: formaPago,
+                            custcol_folio_texto_conauto: folioText,
+                            cseg_folio_conauto: folioId,
+                            cseg_grupo_conauto: grupoId,
+                            entity: cliente,
+                            class: mapClass[concepto]
+                        });
+                        addLineJournal(diarioObj, cuentaCredito, true, monto, {
+                            memo: memo,
+                            custcol_referencia_conauto: referenceCompleta,
+                            custcol_metodo_pago_conauto: formaPago,
+                            custcol_folio_texto_conauto: folioText,
+                            cseg_folio_conauto: folioId,
+                            cseg_grupo_conauto: grupoId,
+                            entity: cliente,
+                            class: mapClass[concepto]
+                        });
                     }
                     let diarioId = diarioObj.save({
                         ignoreMandatoryFields: true
