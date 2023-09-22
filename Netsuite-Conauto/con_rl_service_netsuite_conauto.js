@@ -733,7 +733,7 @@ define([
                         response.info.push("Id de sub estatus no valido: " + data.subestatus);
                     }
                     checkMandatoryFields(data, mandatoryFields, response);
-                    if (["1", "2", "3", "4", "5", "6"].indexOf(data.estatus + "") == -1) {
+                    if ([1, 2, 3, 4, 5, 6].indexOf(data.estatus + "") == -1) {
                         response.code = 302;
                         response.info.push("Id de estatus no valido: " + data.estatus);
                     }
