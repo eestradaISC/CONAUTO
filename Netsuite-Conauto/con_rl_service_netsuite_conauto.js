@@ -58,6 +58,7 @@ define([
                     'ComplementoBajas': complementoBajas,
                     'AplicacionCobranza': aplicacionCobranza,
                     'ProvisionCartera': provisionCartera,
+                    'CambiarEstatus': cambiarEstatus,
                 }
                 let callback = operations[data.tipo];
                 if (callback) {
@@ -702,6 +703,40 @@ define([
             //     }
             // }
 
+        }
+
+        /**
+        *
+        * @param {Object} data
+        * @param {String} data.tipo  tipo de request
+        * @param {Number} data.idNotificacion id de la cual proviene la petición
+        * @param {String} data.folio  folio al cual se cambiara el estatus
+        * @param {Number} data.estatus nuevo estatus
+        * @param {String} data.subestatus  nuevo subestado del folio
+        * @param {Object} response
+        * @param {Number} response.code
+        * @param {Array} response.info
+        */
+        function cambiarEstatus(data, response) {
+            let logId = null;
+            logId = createLog(data, response);
+            response.logId = logId;
+
+
+            try {
+                let folioId = recordFind("customrecord_cseg_folio_conauto", 'anyof', "externalid", data.folio);
+                if (folioId) {
+                    let mandatoryFields = ["folio", "estatus"];
+                    checkMandatoryFields(data, mandatoryFields, response);
+                } else {
+                    response.code = 304;
+                    response.info.push("Folio: " + data.folio + " no existe en NetSuite");
+                }
+            } catch (e) {
+                response.code = 400;
+                response.info.push(e);
+                handlerErrorLogRequest(e, logId);
+            }
         }
 
         function createLog(data, response) {
