@@ -727,7 +727,16 @@ define([
                 let folioId = recordFind("customrecord_cseg_folio_conauto", 'anyof', "externalid", data.folio);
                 if (folioId) {
                     let mandatoryFields = ["folio", "estatus"];
+
+                    if (data?.subestatus && ["1", "2", "3", "4", "5", "6", "7", "8", ""].indexOf(data?.subestatus + "") == -1) {
+                        response.code = 302;
+                        response.info.push("Id de sub estatus no valido: " + data.subestatus);
+                    }
                     checkMandatoryFields(data, mandatoryFields, response);
+                    if (["1", "2", "3", "4", "5", "6"].indexOf(data.estatus + "") == -1) {
+                        response.code = 302;
+                        response.info.push("Id de estatus no valido: " + data.estatus);
+                    }
                 } else {
                     response.code = 304;
                     response.info.push("Folio: " + data.folio + " no existe en NetSuite");
