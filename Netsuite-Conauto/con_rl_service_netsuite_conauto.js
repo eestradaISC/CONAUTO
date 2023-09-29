@@ -58,6 +58,7 @@ define([
                     'ComplementoBajas': complementoBajas,
                     'AplicacionCobranza': aplicacionCobranza,
                     'ProvisionCartera': provisionCartera,
+                    'CambiarEstatus': cambiarEstatus,
                 }
                 let callback = operations[data.tipo];
                 if (callback) {
@@ -702,6 +703,49 @@ define([
             //     }
             // }
 
+        }
+
+        /**
+        *
+        * @param {Object} data
+        * @param {String} data.tipo  tipo de request
+        * @param {Number} data.idNotificacion id de la cual proviene la petición
+        * @param {String} data.folio  folio al cual se cambiara el estatus
+        * @param {Number} data.estatus nuevo estatus
+        * @param {String} data.subestatus  nuevo subestado del folio
+        * @param {Object} response
+        * @param {Number} response.code
+        * @param {Array} response.info
+        */
+        function cambiarEstatus(data, response) {
+            let logId = null;
+            logId = createLog(data, response);
+            response.logId = logId;
+
+
+            try {
+                let folioId = recordFind("customrecord_cseg_folio_conauto", 'anyof', "externalid", data.folio);
+                if (folioId) {
+                    let mandatoryFields = ["folio", "estatus"];
+
+                    if (data?.subestatus && ["3", "4", "5", "6", "7", "8", ""].indexOf(data?.subestatus + "") == -1) {
+                        response.code = 302;
+                        response.info.push("Id de sub estatus no valido: " + data.subestatus);
+                    }
+                    checkMandatoryFields(data, mandatoryFields, response);
+                    if ([1, 2, 3, 4].indexOf(data.estatus + "") == -1) {
+                        response.code = 302;
+                        response.info.push("Id de estatus no valido: " + data.estatus);
+                    }
+                } else {
+                    response.code = 304;
+                    response.info.push("Folio: " + data.folio + " no existe en NetSuite");
+                }
+            } catch (e) {
+                response.code = 400;
+                response.info.push(e);
+                handlerErrorLogRequest(e, logId);
+            }
         }
 
         function createLog(data, response) {

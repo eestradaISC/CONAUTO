@@ -69,6 +69,7 @@ define([
                                         'ComplementoBajas': complementoBajas,
                                         'AplicacionCobranza': aplicacionCobranza,
                                         'ProvisionCartera': provisionCartera,
+                                        'CambiarEstatus': cambiarEstatus,
                                 }
                                 let callback = operations[request.tipo];
                                 log.debug('callback', callback);
@@ -1888,6 +1889,58 @@ define([
                                 solPagos: [],
                                 folios: [],
                                 errors: errors
+                        };
+                }
+
+                /**
+                *
+                * @param {Object} data
+                * @param {String} data.tipo  tipo de request
+                * @param {Number} data.idNotificacion id de la cual proviene la petición
+                * @param {String} data.folio  folio al cual se cambiara el estatus
+                * @param {Number} data.estatus nuevo estatus
+                * @param {String} data.subestatus  nuevo subestado del folio
+                * @param {Object} response
+                * @param {Number} response.code
+                * @param {Array} response.info
+                */
+                function cambiarEstatus(data) {
+                        const recordType = "customrecord_cseg_folio_conauto";
+                        let recordsId = [];
+                        let transactions = [];
+                        let folios = [];
+
+
+                        let folioId = recordFind("customrecord_cseg_folio_conauto", 'anyof', "externalid", data.folio);
+                        if (folioId) {
+                                folios.push(folioId);
+                                data.folio = folioId;
+                                let mapsFolio = [
+                                        {
+                                                type: "number",
+                                                field: "estatus",
+                                                fieldRecord: "custrecord_folio_estado"
+                                        }
+                                ];
+
+                                if (data?.subestatus || data?.subestatus == "") mapsFolio.push({
+                                        type: "text",
+                                        field: "subestatus",
+                                        fieldRecord: "custrecord_folio_subestatus"
+                                })
+
+                                const recordObj = record.load({ type: recordType, id: folioId, isDynamic: true });
+                                setDataRecord(mapsFolio, data, recordObj);
+                                recordsId.push(recordObj.save({ ignoreMandatoryFields: true }))
+                        } else {
+                                throw error.create({ name: "FOLIO_NOT_FOUND", message: "NO se encontro el folio: " + data.folio })
+                        }
+                        return {
+                                recordType: recordType,
+                                transactions: transactions,
+                                records: recordsId,
+                                solPagos: [],
+                                folios: folios
                         };
                 }
 

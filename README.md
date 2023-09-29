@@ -481,3 +481,24 @@ Scripts utilizados por CONAUTO en NetSuite
         ]
     }
     ```
+
+- **CambiarEstatus**
+
+  - | Campo          | Tipo   |
+    | -------------- | ------ |
+    | tipo           | String |
+    | idNotificacion | String |
+    | folio          | String |
+    | estatus        | Number |
+    | subestatus     | String |
+
+  - ```json
+    Ejemplo JSON
+    {
+        "tipo": "CambiarEstatus",
+        "idNotificacion": "47265",
+        "folio": "1105041",
+        "estatus": 5,
+        "subestatus": "1"
+    }
+    ```
