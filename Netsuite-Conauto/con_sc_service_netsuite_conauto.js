@@ -81,10 +81,10 @@ define([
                                                 values: {
                                                         custrecord_log_serv_processed: true,
                                                         custrecord_log_serv_recordtype: resultados.recordType,
-                                                        custrecord_log_serv_transactions: resultados.transactions.join(','),
-                                                        custrecord_log_serv_solpagos: resultados.solPagos.join(','),
+                                                        custrecord_log_serv_transactions: resultados.transactions,
+                                                        custrecord_log_serv_solpagos: resultados.solPagos,
                                                         custrecord_log_serv_record_ids: resultados.records.join(','),
-                                                        custrecord_log_serv_folio: resultados.folios.join(','),
+                                                        custrecord_log_serv_folio: resultados.folios,
                                                         custrecord_log_serv_error: (resultados.errors || []).join('\n')
                                                 }
                                         })
@@ -213,8 +213,8 @@ define([
                         let foliosId = [];
                         if (errors.length == 0) {
                                 let foliosText = [];
-                                for (let i = 0; i < payments.length; i++) {
-                                        let folioText = payments[i].folio;
+                                for (const paymentData of payments) {
+                                        let folioText = paymentData.folio;
                                         if (folioText && foliosText.indexOf(folioText) == -1) {
                                                 foliosText.push(folioText);
                                         }
@@ -241,16 +241,19 @@ define([
                                                 foliosId.push(id);
                                         }
                                 });
+
                                 let hashDate = {};
-                                for (let i = 0; i < payments.length; i++) {
-                                        hashDate[payments[i].fechaCobranza] = hashDate[payments[i].fechaCobranza] || [];
-                                        hashDate[payments[i].fechaCobranza].push(payments[i]);
+                                for (const paymentData of payments) {
+                                        hashDate[paymentData.fechaCobranza] = hashDate[paymentData.fechaCobranza] || [];
+                                        hashDate[paymentData.fechaCobranza].push(paymentData);
                                 }
+
                                 for (let date in hashDate) {
                                         let journal = record.create({
                                                 type: record.Type.JOURNAL_ENTRY,
                                                 isDynamic: true
                                         });
+
                                         journal.setValue({
                                                 fieldId: 'subsidiary',
                                                 value: subsidiary
@@ -278,8 +281,7 @@ define([
                                         let amountTotal = 0;
                                         let countLinesJournal = 0;
                                         let listPayments = hashDate[date];
-                                        for (let i = 0; i < listPayments.length; i++) {
-                                                let payment = listPayments[i];
+                                        for (const payment of listPayments) {
                                                 let folioText = payment.folio;
                                                 let folioId = dataFolios[folioText];
                                                 if (!folioId) {
@@ -298,7 +300,9 @@ define([
                                                         folioId = folioObj.save({
                                                                 ignoreMandatoryFields: true
                                                         });
+                                                        foliosId.push(folioId);
                                                         dataFolios[folioText] = folioId;
+
                                                 }
                                                 if (primerosPagos.indexOf(payment.folio) != -1) {
                                                         //continue;
@@ -321,7 +325,7 @@ define([
                                                 journal.setCurrentSublistValue({
                                                         sublistId: 'line',
                                                         fieldId: 'memo',
-                                                        value: 'Cobranza PRIMERAS CUOTAS de la referencia ' + payment.referencia
+                                                        value: 'Cobranza PRIMERAS CUOTAS de la referencia ' + payment.referenciaCompleta
                                                 });
                                                 journal.setCurrentSublistValue({
                                                         sublistId: 'line',
@@ -331,7 +335,7 @@ define([
                                                 journal.setCurrentSublistValue({
                                                         sublistId: 'line',
                                                         fieldId: 'custcol_referencia_conauto',
-                                                        value: payment.referencia
+                                                        value: payment.referenciaCompleta
                                                 });
                                                 journal.setCurrentSublistValue({
                                                         sublistId: 'line',
@@ -348,6 +352,11 @@ define([
                                                         fieldId: 'cseg_folio_conauto',
                                                         value: folioId
                                                 });
+                                                journal.setCurrentSublistValue({
+                                                        sublistId: 'line',
+                                                        fieldId: 'location',
+                                                        value: 6
+                                                });
                                                 journal.commitLine({
                                                         sublistId: 'line'
                                                 });
@@ -363,7 +372,7 @@ define([
                                                 journal.setCurrentSublistValue({
                                                         sublistId: 'line',
                                                         fieldId: 'memo',
-                                                        value: 'Cobranza PRIMERAS CUOTAS de la referencia ' + payment.referencia
+                                                        value: 'Cobranza PRIMERAS CUOTAS de la referencia ' + payment.referenciaCompleta
                                                 });
                                                 journal.setCurrentSublistValue({
                                                         sublistId: 'line',
@@ -378,7 +387,7 @@ define([
                                                 journal.setCurrentSublistValue({
                                                         sublistId: 'line',
                                                         fieldId: 'custcol_referencia_conauto',
-                                                        value: payment.referencia
+                                                        value: payment.referenciaCompleta
                                                 });
                                                 journal.setCurrentSublistValue({
                                                         sublistId: 'line',
@@ -394,6 +403,11 @@ define([
                                                         sublistId: 'line',
                                                         fieldId: 'cseg_folio_conauto',
                                                         value: folioId
+                                                });
+                                                journal.setCurrentSublistValue({
+                                                        sublistId: 'line',
+                                                        fieldId: 'location',
+                                                        value: 6
                                                 });
                                                 journal.commitLine({
                                                         sublistId: 'line'
@@ -440,6 +454,8 @@ define([
                                                 });
                                                 transactions.push(journalId);
                                         }
+
+
                                 }
                         } else {
                                 throw error.create({
