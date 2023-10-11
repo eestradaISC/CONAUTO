@@ -138,6 +138,7 @@ Scripts utilizados por CONAUTO en NetSuite
     | cliente.rfc                 | String                 |
     | cliente.rf-clave            | String                 |
     | cliente.razon               | String                 |
+    | cliente.usoCfdi             | String                 |
     | cliente.direccion           | Object                 |
     | cliente.direccion.calle     | String                 |
     | cliente.direccion.numero    | String                 |
@@ -203,6 +204,7 @@ Scripts utilizados por CONAUTO en NetSuite
             "rfc": "BARG530625AQ7",
             "rf-clave": "605",
             "razon": "GUILLERMO BARONA REYES",
+            "usoCfdi": "P01",
             "direccion": {
                 "calle": "NORTE 64",
                 "numero": "",
