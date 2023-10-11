@@ -808,6 +808,11 @@ define([
                                                         'type': 'text'
                                                 },
                                                 {
+                                                        'field': 'usoCfdi',
+                                                        'fieldRecord': 'custentity_uso_cfdi',
+                                                        'type': 'text'
+                                                },
+                                                {
                                                         'field': 'tipo',
                                                         'fieldRecord': 'custentity_imr_tipocliente',
                                                         'type': 'boolean'
