@@ -594,6 +594,10 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                         value: subsidiary
                     });
                     diarioObj.setValue({
+                        fieldId: "trandate",
+                        value: date
+                    });
+                    diarioObj.setValue({
                         fieldId: "custbody_imr_tippolcon",
                         value: 1
                     });
@@ -781,7 +785,7 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                     });
                     diarioObj.setValue({
                         fieldId: "trandate",
-                        value: new Date()
+                        value: date
                     });
                     diarioObj.setValue({
                         fieldId: "currency",
@@ -859,6 +863,9 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                 let esPrimerPago = pagoObj.getValue({
                     fieldId: "custrecord_imr_rec_primer_pago"
                 });
+                let fechaCobranza = pagoObj.getValue({
+                    fieldId: "custrecord_imr_pa_fecha"
+                });
                 let tipoBoleta = pagoObj.getValue({
                     fieldId: "custrecord_imr_pa_tipo_boleta_interna"
                 });
@@ -922,6 +929,10 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                     creditMemoObj.setValue({
                         fieldId: "entity",
                         value: cliente
+                    });
+                    creditMemoObj.setValue({
+                        fieldId: "trandate",
+                        value: fechaCobranza
                     });
                     creditMemoObj.setValue({
                         fieldId: "custbody_imr_tippolcon",
@@ -1725,6 +1736,9 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                 let esPrimerPago = pagoObj.getValue({
                     fieldId: "custrecord_imr_rec_primer_pago"
                 });
+                let fechaCobranza = pagoObj.getValue({
+                    fieldId: "custrecord_imr_pa_fecha"
+                });
                 let tipoBoleta = pagoObj.getValue({
                     fieldId: "custrecord_imr_pa_tipo_boleta_interna"
                 });
@@ -1788,6 +1802,10 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                         fieldId: "entity",
                         value: cliente
                     });
+                    facturaObj.setValue({
+                        fieldId: "trandate",
+                        value: fechaCobranza
+                    })
                     facturaObj.setValue({
                         fieldId: "custbody_imr_tippolcon",
                         value: 5
@@ -2396,7 +2414,6 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
             }
             return id;
         }
-
 
         exports.beforeLoad = beforeLoad;
         exports.beforeSubmit = beforeSubmit;

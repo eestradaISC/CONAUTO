@@ -1109,8 +1109,7 @@ define([
                                 //Se valida que exista pago de unidad y emision de poliza
                                 if (pagosUnidad.length > 0 && emisionPoliza.length > 0) {
                                         //Generar los pagos virtuales 
-                                        for (let i = 0; i < pagosUnidad.length; i++) {
-                                                let pagoUnidad = pagosUnidad[i];
+                                        for (const pagoUnidad of pagosUnidad) {
                                                 let pagoUnidadId = pagoUnidad.id;
                                                 let referencia = pagoUnidad.getValue({
                                                         name: 'custrecord_imr_pu_referencia'
@@ -1136,12 +1135,12 @@ define([
                                                                 value: folioText
                                                         });
                                                         pagoAmortizacionObj.setValue({
-                                                                fieldId: 'custrecord_imr_pa_referencia',
-                                                                value: referencia.substring(0, 2)
-                                                        });
-                                                        pagoAmortizacionObj.setValue({
                                                                 fieldId: 'custrecord_imr_pa_referencia_completa',
                                                                 value: referencia
+                                                        });
+                                                        pagoAmortizacionObj.setValue({
+                                                                fieldId: 'custrecord_imr_pa_referencia',
+                                                                value: referencia.substring(0, 2)
                                                         });
                                                         pagoAmortizacionObj.setValue({
                                                                 fieldId: 'custrecord_imr_pa_importe',
@@ -1706,9 +1705,11 @@ define([
                 * @param {Number} response.code
                 * @param {Array} response.info
                 */
-                function aplicacionCobranza(data) {
+                function aplicacionCobranza(data, logId) {
                         log.debug("Data aplicacion cobranza", data);
                         let records = [];
+                        let transactions = [];
+                        let folios = [];
                         let errors = [];
                         let recordType = "customrecord_imr_pagos_amortizacion";
 
@@ -1785,16 +1786,16 @@ define([
                                         },
                                         {
                                                 type: "text",
+                                                field: "referenciaCompleta",
+                                                fieldRecord: "custrecord_imr_pa_referencia_completa"
+                                        },
+                                        {
+                                                type: "text",
                                                 field: "referencia",
                                                 fieldRecord: "custrecord_imr_pa_referencia",
                                                 callback: function (value) {
                                                         return (value || '').substring(0, 2)
                                                 }
-                                        },
-                                        {
-                                                type: "text",
-                                                field: "referencia",
-                                                fieldRecord: "custrecord_imr_pa_referencia_completa"
                                         },
                                         {
                                                 type: "text",
@@ -1817,6 +1818,10 @@ define([
                                                 type: recordType,
                                                 isDynamic: true
                                         });
+                                        recordPagoObj.setValue({
+                                                fieldId: "custrecord_con_log_request2",
+                                                value: logId
+                                        })
                                         for (let field of fields) {
                                                 let fieldId = field.fieldRecord;
                                                 let value = payment[field.field];
@@ -1834,6 +1839,22 @@ define([
                                                         ignoreMandatoryFields: true
                                                 });
                                                 records.push(recordPagoId);
+
+                                                let pagoAmortizacion = record.load({
+                                                        type: recordType,
+                                                        id: recordPagoId,
+                                                        isDynamic: true
+                                                });
+                                                let folioId = pagoAmortizacion.getValue("custrecord_imr_pa_folio");
+                                                if (folioId) folios.push(folioId);
+                                                let FieldJournalEntries = ["custrecord_imr_pa_diario", "custrecord_imr_pa_diario_cancelacion", "custrecord_imr_pa_diario_reinstalacion",
+                                                        "custrecord_imr_pa_diario_cxp", "custrecord_imr_pa_diario_can_cxp", "custrecord__imr_pa_diario_seg_auto",
+                                                        "custrecord_imr_pa_factura", "custrecord_imr_pa_nota_credito", "custrecord_imr_pa_diario_cartera",
+                                                        "custrecord_imr_pa_diario_no_iden", "custrecord_imr_pa_diario_can_segauto", "custrecord_imr_pa_diario_can_cartera"];
+                                                for (let fieldId of FieldJournalEntries) {
+                                                        let transactionId = pagoAmortizacion.getValue(fieldId);
+                                                        if (transactionId) transactions.push(transactionId);
+                                                }
                                         } catch (e) {
                                                 errors.push(e.toString())
                                         }
@@ -1847,10 +1868,10 @@ define([
 
                         return {
                                 recordType: recordType,
-                                transactions: [],
+                                transactions: transactions,
                                 records: records,
                                 solPagos: [],
-                                folios: [],
+                                folios: folios,
                                 errors: errors
                         };
                 }
