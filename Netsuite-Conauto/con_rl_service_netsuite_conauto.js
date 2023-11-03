@@ -59,6 +59,7 @@ define([
                     'AplicacionCobranza': aplicacionCobranza,
                     'ProvisionCartera': provisionCartera,
                     'CambiarEstatus': cambiarEstatus,
+                    'ReclasificacionPrimeraCuota': reclasificacionPrimeraCuota,
                 }
                 let callback = operations[data.tipo];
                 if (callback) {
@@ -748,6 +749,75 @@ define([
             }
         }
 
+        /**
+        *
+        * @param {Object} data
+        * @param {String} data.tipo  tipo de request
+        * @param {Number} data.idNotificacion id de la cual proviene la petición
+        * @param {Object[]}  data.pagos  pagos a registrar
+        * @param {String} data.pagos.folio  folio al cual se registrara el pago
+        * @param {String} data.pagos.referencia  referencia del pago
+        * @param {Date}   data.pagos.fecha  fecha de cobranza
+        * @param {Array}  data.pagos.monto  monto
+        * @param {String} data.pagos.grupo  grupo del cliente
+        * @param {String} data.pagos.cliente  cliente
+        * @param {String} data.pagos.formaPago  forma del pago
+        * @param {Number} data.pagos.importe  importe total
+        * @param {Number} data.pagos.totalPagado  total pagado
+        * @param {Number} data.pagos.aportacion  reclasificación aportación
+        * @param {Number} data.pagos.gastos  reclasificación gastos
+        * @param {Number} data.pagos.iva  reclasificación iva
+        * @param {Number} data.pagos.seguro_auto  reclasificación seguro de auto
+        * @param {Number} data.pagos.seguro_vida  reclasificación seguro de vida
+        * @param {Object} response
+        * @param {Number} response.code
+        * @param {Array}  response.info
+        */
+        function reclasificacionPrimeraCuota(data, response) {
+            let logId = null;
+            logId = createLog(data, response);
+            response.logId = logId;
+
+            let payments = data.pagos || [];
+            if (payments.length == 0) {
+                response.code = 303;
+                response.info.push("No se encontraron pagos para relasificar en la petición");
+                return;
+            }
+            let preferences = conautoPreferences.get();
+            let folios = [];
+            let mandatoryFields = ["referencia", "fecha", "folio", "monto", "aportacion", "totalPagado", "formaPago"];
+
+            let d = new Date();
+            let paymentTime = d.getTime();
+            log.debug("PaymentTime", paymentTime)
+            for (let i = 0; i < payments.length; i++) {
+                let payment = payments[i];
+                payment.id = [getDateExternalid(payment.fechaPago), payment.referencia, payment.folio, parseFloat(payment.monto).toFixed(2), payment.numPago].join("_");
+
+                checkMandatoryFields(payment, mandatoryFields, response, i + 1);
+                checkMandatoryFieldsDate(payment, ["fecha"], response, i + 1);
+                if (payment.folio) {
+                    folios.push(payment.folio);
+                }
+            }
+
+            for (let i = 0; i < payments.length; i++) {
+                let payment = payments[i];
+
+                if (payment.referencia) {
+                    let account = preferences.getPreference({
+                        key: "CB1P",
+                        reference: (payment.referencia || '').substring(0, 2)
+                    });
+                    if (!account) {
+                        response.code = 305;
+                        response.info.push("Linea " + (i + 1) + ": Referencia \"" + (payment.referencia || '').substring(0, 2) + "\" no valida");
+                    }
+                }
+            }
+        }
+
         function createLog(data, response) {
             let logId = null;
             try {
@@ -787,7 +857,7 @@ define([
                     name: 'REQ_' + dateNow + '.json',
                     contents: JSON.stringify(data),
                     fileType: file.Type.JSON,
-                    folder: 12362
+                    folder: 96285
                 });
                 let requestFileId = requestFile.save();
                 //Respuesta
@@ -795,7 +865,7 @@ define([
                     name: 'RES_' + dateNow + '.json',
                     contents: JSON.stringify(response),
                     fileType: file.Type.JSON,
-                    folder: 12363
+                    folder: 96286
                 });
                 let responseFileId = responseFile.save();
                 if (requestFileId && responseFileId) {

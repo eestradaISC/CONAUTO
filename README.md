@@ -504,3 +504,51 @@ Scripts utilizados por CONAUTO en NetSuite
         "subestatus": "1"
     }
     ```
+
+- **ReclasificacionPrimeraCuota**
+
+  - | Campo             | Tipo                   |
+    | ----------------- | ---------------------- |
+    | tipo              | String                 |
+    | idNotificacion    | String                 |
+    | pagos             | Array[Object]          |
+    | pagos.folio       | String                 |
+    | pagos.referencia  | String                 |
+    | pagos.fecha       | Date Format DD/MM/YYYY |
+    | pagos.monto       | Number                 |
+    | pagos.grupo       | String                 |
+    | pagos.cliente     | String                 |
+    | pagos.formaPago   | String                 |
+    | pagos.importe     | Number                 |
+    | pagos.totalPagado | Number                 |
+    | pagos.aportacion  | Number                 |
+    | pagos.gastos      | Number                 |
+    | pagos.iva         | Number                 |
+    | pagos.seguro_auto | Number                 |
+    | pagos.seguro_vida | Number                 |
+
+  - ```json
+    Ejemplo JSON
+    {
+    "tipo": "ReclasificacionPrimeraCuota",
+    "idNotificacion": "189",
+    "pagos": [
+          {
+            "folio": "1148590",
+            "referencia": "RB23082023",
+            "fecha": "23/08/2023",
+            "monto": 220,
+            "grupo": "5460",
+            "cliente": "50",
+            "formaPago": "01",
+            "importe": 5071.92,
+            "totalPagado": 5071.92,
+            "aportacion": 2829.57,
+            "gastos": 868,
+            "iva": 138.88,
+            "seguro_auto": 197.96,
+            "seguro_vida": 1037.51
+          }
+        ]
+    }
+    ```
