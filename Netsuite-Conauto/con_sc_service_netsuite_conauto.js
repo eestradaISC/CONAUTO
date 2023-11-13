@@ -71,6 +71,7 @@ define([
                                         'ProvisionCartera': provisionCartera,
                                         'CambiarEstatus': cambiarEstatus,
                                         'ReclasificacionPrimeraCuota': reclasificacionPrimeraCuota,
+                                        'PagoUnidad': pagoUnidad,
                                 }
                                 let callback = operations[request.tipo];
                                 log.debug('callback', callback);
@@ -2265,6 +2266,130 @@ define([
                                 errors: errors
                         };
                 }
+
+                /***
+                 *
+                 * @param {Object} data
+                 * @param {String} data.folio folio que afectara la boleta interna
+                 * @param {String} data.folioFactura folio de la factura
+                 * @param {Number} data.factura importe de la factura
+                 * @param {Number} data.cartaCredito importe de carta de credito
+                 * @param {Number} data.diferenciaCCVF diferencia
+                 * @param {String} data.bid numero de proveedor
+                 * @param {String} data.vehiculoEnt numero de vehiculo
+                 * @param {Number} data.totalPagar importe a pagar
+                 */
+                function pagoUnidad(data) {
+                        let recordType = "customrecord_imr_pago_unidad";
+                        let recordsId = [];
+                        let folios = [];
+                        let transactions = [];
+                        let folioId = "";
+                        let errors = [];
+                        try {
+                                folioId = recordFind("customrecord_cseg_folio_conauto", 'anyof', "externalid", data.folio);
+                        } catch (e) {
+                        }
+                        if (folioId) {
+                                folios.push(folioId)
+                                data.folio = folioId;
+                                let mapsFieldsSiniestroAuto = [
+                                        {
+                                                type: "text",
+                                                field: "folio",
+                                                fieldRecord: "custrecord_imr_pu_folio"
+                                        },
+                                        {
+                                                type: "text",
+                                                field: "folioFactura",
+                                                fieldRecord: "custrecord_imr_pu_num_factura"
+                                        },
+                                        {
+                                                type: "number",
+                                                field: "factura",
+                                                fieldRecord: "custrecord_imr_pu_factura"
+                                        },
+                                        {
+                                                type: "number",
+                                                field: "cartaCredito",
+                                                fieldRecord: "custrecord_imr_pu_carta_credito"
+                                        },
+                                        {
+                                                type: "number",
+                                                field: "diferenciaCCVF",
+                                                fieldRecord: "custrecord_imr_pu_dif_cc_vf"
+                                        },
+                                        {
+                                                type: "text",
+                                                field: "bid",
+                                                fieldRecord: "custrecord_imr_pu_bid"
+                                        },
+                                        {
+                                                type: "text",
+                                                field: "vehiculoEnt",
+                                                fieldRecord: "custrecord_imr_pu_vehiculo_ent"
+                                        },
+                                        {
+                                                type: "text",
+                                                field: "totalPagar",
+                                                fieldRecord: "custrecord_imr_pu_total_pagar"
+                                        },
+                                        {
+                                                type: "text",
+                                                field: "descripcionVehEnt",
+                                                fieldRecord: "custrecord_imr_pu_desc_vehiculo"
+                                        },
+                                        {
+                                                type: "text",
+                                                field: "domiciliado",
+                                                fieldRecord: "custrecord_imr_pu_domiciliado"
+                                        },
+                                        {
+                                                type: "text",
+                                                field: "marcaVehiculo",
+                                                fieldRecord: "custrecord_imr_pu_marca_vehiculo"
+                                        },
+                                        {
+                                                type: "text",
+                                                field: "linea",
+                                                fieldRecord: "custrecord_imr_pu_linea"
+                                        },
+                                        {
+                                                type: "text",
+                                                field: "añoModelo",
+                                                fieldRecord: "custrecord_imr_pu_ano_modelo"
+                                        },
+                                        {
+                                                type: "text",
+                                                field: "referencia",
+                                                fieldRecord: "custrecord_imr_pu_referencia"
+                                        }
+                                ];
+                                let recordObj = record.create({
+                                        type: recordType,
+                                        isDynamic: true
+                                });
+                                setDataRecord(mapsFieldsSiniestroAuto, data, recordObj);
+                                let pagoUnidadId = recordObj.save({
+                                        ignoreMandatoryFields: true
+                                })
+                                recordsId.push(pagoUnidadId);
+                        } else {
+                                throw error.create({
+                                        name: "FOLIO_NOT_FOUND",
+                                        message: "NO se encontro el folio: " + data.folio
+                                })
+                        }
+                        return {
+                                recordType: recordType,
+                                transactions: transactions,
+                                records: recordsId,
+                                solPagos: [],
+                                folios: folios,
+                                errors: errors
+                        };
+                }
+
 
                 function applyPaymentLine(recordObj, line) {
                         let payments = 0;
