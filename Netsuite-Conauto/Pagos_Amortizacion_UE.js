@@ -1905,6 +1905,11 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                     });
                     facturaObj.setCurrentSublistValue({
                         sublistId: "item",
+                        fieldId: "custcol_referencia_conauto",
+                        value: recerenciaCompleta
+                    });
+                    facturaObj.setCurrentSublistValue({
+                        sublistId: "item",
                         fieldId: "cseg_folio_conauto",
                         value: folioId
                     });

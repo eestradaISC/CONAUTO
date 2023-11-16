@@ -365,24 +365,30 @@ Scripts utilizados por CONAUTO en NetSuite
 
 - **ComplementoBajas**
 
-  - | Campo          | Tipo   |
-    | -------------- | ------ |
-    | tipo           | String |
-    | idNotificacion | String |
-    | folio          | String |
-    | saldoADevolver | Number |
-    | penalizacion   | Number |
-    | estado         | Number |
+  - | Campo                  | Tipo   |
+    | ---------------------- | ------ |
+    | tipo                   | String |
+    | idNotificacion         | String |
+    | folio                  | String |
+    | saldoADevolver         | Number |
+    | originalSaldoADevolver | Number |
+    | originalPenalizacion   | String |
+    | tipoComplemento        | String |
+    | penalizacion           | Number |
+    | estado                 | Number |
 
   - ```json
     Ejemplo JSON
     {
-        "tipo": "ComplementoBajas",
-        "idNotificacion": "95843",
-        "folio": "9000321",
-        "saldoADevolver": 15124,
-        "penalizacion": 30000,
-        "estado": 6
+      "tipo": "ComplementoBajas",
+      "idNotificacion": "95843",
+      "folio": "1105041",
+      "saldoADevolver": 15124,
+      "originalSaldoADevolver": 12312,
+      "originalPenalizacion": 213482.21,
+      "tipoComplemento": "1",
+      "penalizacion": 30000,
+      "estado": 6
     }
     ```
 

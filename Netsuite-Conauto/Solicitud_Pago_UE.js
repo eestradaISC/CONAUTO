@@ -398,7 +398,7 @@ define(["N/record", "IMR/IMRSearch", "/SuiteScripts/Conauto_Preferences.js", "N/
                 vatregnumber: rfc,
                 custentity_imr_llave_integracion: [rfc, nombre].join("_")
             });
-            var nota = "Pago de unidad de adjudicados del Gpo-" + getGrpIntegrante(recordObj) + " No de Folio" + (folio ? (" Folio: " + folio) : "");
+            var nota = "Pago de unidad de adjudicados del Gpo-" + getGrpIntegrante(recordObj) + " No de Folio" + (folio ? (" " + folio) : "");
             var tranidnote = "PDU ADJ Gpo-" + getGrpIntegrante(recordObj) + " Folio: " + folio
             var facturaObj = record.create({
                 type: record.Type.VENDOR_BILL,
