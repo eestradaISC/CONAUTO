@@ -126,7 +126,8 @@ define([
             if (detalles.length > 0) {
                 for (let i = 0; i < detalles.length; i++) {
                     let detalle = detalles[i];
-                    let mandatoryFields = ['tipoMovimiento', 'monto', 'cuentaBancaria', 'beneficiario'];
+                    let mandatoryFields = ['tipoMovimiento', 'monto', 'beneficiario'];
+                    if (detalle.tipoMovimiento != 3) mandatoryFields.push('cuentaBancaria')
                     checkMandatoryFields(detalle, mandatoryFields, response, i + 1);
                     if (detalle.banco && ['1', '18', '19', '20', '21', '22', '23', '24', '5', '25', '26', '27', '28', '29', '30', '31', '32', '33', '34', '35', '36', '6', '37', '38', '39', '40', '41', '42', '43', '44', '45', '46', '47', '48', '49', '50', '51', '52', '53', '7', '2', '8', '9', '10', '11', '12', '13', '14', '3', '15', '54', '55', '56', '57', '58', '59', '60', '61', '62', '16', '63', '64', '65', '66', '67', '68', '69', '70', '71', '72', '73', '74', '75', '76', '77', '78', '79', '80', '81', '82', '83', '17', '4', '84', '85', '86'].indexOf(detalle.banco) == -1) {
                         response.code = 400;
