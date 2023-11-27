@@ -59,6 +59,7 @@ define([
                     'AplicacionCobranza': aplicacionCobranza,
                     'ProvisionCartera': provisionCartera,
                     'CambiarEstatus': cambiarEstatus,
+                    'ReclasificacionPrimeraCuota': reclasificacionPrimeraCuota,
                 }
                 let callback = operations[data.tipo];
                 if (callback) {
@@ -125,7 +126,8 @@ define([
             if (detalles.length > 0) {
                 for (let i = 0; i < detalles.length; i++) {
                     let detalle = detalles[i];
-                    let mandatoryFields = ['tipoMovimiento', 'monto', 'cuentaBancaria', 'beneficiario'];
+                    let mandatoryFields = ['tipoMovimiento', 'monto', 'beneficiario'];
+                    if (detalle.tipoMovimiento != 3) mandatoryFields.push('cuentaBancaria')
                     checkMandatoryFields(detalle, mandatoryFields, response, i + 1);
                     if (detalle.banco && ['1', '18', '19', '20', '21', '22', '23', '24', '5', '25', '26', '27', '28', '29', '30', '31', '32', '33', '34', '35', '36', '6', '37', '38', '39', '40', '41', '42', '43', '44', '45', '46', '47', '48', '49', '50', '51', '52', '53', '7', '2', '8', '9', '10', '11', '12', '13', '14', '3', '15', '54', '55', '56', '57', '58', '59', '60', '61', '62', '16', '63', '64', '65', '66', '67', '68', '69', '70', '71', '72', '73', '74', '75', '76', '77', '78', '79', '80', '81', '82', '83', '17', '4', '84', '85', '86'].indexOf(detalle.banco) == -1) {
                         response.code = 400;
@@ -728,12 +730,12 @@ define([
                 if (folioId) {
                     let mandatoryFields = ["folio", "estatus"];
 
-                    if (data?.subestatus && ["3", "4", "5", "6", "7", "8", ""].indexOf(data?.subestatus + "") == -1) {
+                    if (data?.subestatus && ["3", "4", "5", "6", "7", "8", ""].indexOf(data?.subestatus) == -1) {
                         response.code = 302;
                         response.info.push("Id de sub estatus no valido: " + data.subestatus);
                     }
                     checkMandatoryFields(data, mandatoryFields, response);
-                    if ([1, 2, 3, 4].indexOf(data.estatus + "") == -1) {
+                    if ([1, 2, 3, 4].indexOf(data.estatus) == -1) {
                         response.code = 302;
                         response.info.push("Id de estatus no valido: " + data.estatus);
                     }
@@ -745,6 +747,75 @@ define([
                 response.code = 400;
                 response.info.push(e);
                 handlerErrorLogRequest(e, logId);
+            }
+        }
+
+        /**
+        *
+        * @param {Object} data
+        * @param {String} data.tipo  tipo de request
+        * @param {Number} data.idNotificacion id de la cual proviene la petición
+        * @param {Object[]}  data.pagos  pagos a registrar
+        * @param {String} data.pagos.folio  folio al cual se registrara el pago
+        * @param {String} data.pagos.referencia  referencia del pago
+        * @param {Date}   data.pagos.fecha  fecha de cobranza
+        * @param {Array}  data.pagos.monto  monto
+        * @param {String} data.pagos.grupo  grupo del cliente
+        * @param {String} data.pagos.cliente  cliente
+        * @param {String} data.pagos.formaPago  forma del pago
+        * @param {Number} data.pagos.importe  importe total
+        * @param {Number} data.pagos.totalPagado  total pagado
+        * @param {Number} data.pagos.aportacion  reclasificación aportación
+        * @param {Number} data.pagos.gastos  reclasificación gastos
+        * @param {Number} data.pagos.iva  reclasificación iva
+        * @param {Number} data.pagos.seguro_auto  reclasificación seguro de auto
+        * @param {Number} data.pagos.seguro_vida  reclasificación seguro de vida
+        * @param {Object} response
+        * @param {Number} response.code
+        * @param {Array}  response.info
+        */
+        function reclasificacionPrimeraCuota(data, response) {
+            let logId = null;
+            logId = createLog(data, response);
+            response.logId = logId;
+
+            let payments = data.pagos || [];
+            if (payments.length == 0) {
+                response.code = 303;
+                response.info.push("No se encontraron pagos para relasificar en la petición");
+                return;
+            }
+            let preferences = conautoPreferences.get();
+            let folios = [];
+            let mandatoryFields = ["referencia", "fecha", "folio", "monto", "aportacion", "totalPagado", "formaPago"];
+
+            let d = new Date();
+            let paymentTime = d.getTime();
+            log.debug("PaymentTime", paymentTime)
+            for (let i = 0; i < payments.length; i++) {
+                let payment = payments[i];
+                payment.id = [getDateExternalid(payment.fechaPago), payment.referencia, payment.folio, parseFloat(payment.monto).toFixed(2), payment.numPago].join("_");
+
+                checkMandatoryFields(payment, mandatoryFields, response, i + 1);
+                checkMandatoryFieldsDate(payment, ["fecha"], response, i + 1);
+                if (payment.folio) {
+                    folios.push(payment.folio);
+                }
+            }
+
+            for (let i = 0; i < payments.length; i++) {
+                let payment = payments[i];
+
+                if (payment.referencia) {
+                    let account = preferences.getPreference({
+                        key: "CB1P",
+                        reference: (payment.referencia || '').substring(0, 2)
+                    });
+                    if (!account) {
+                        response.code = 305;
+                        response.info.push("Linea " + (i + 1) + ": Referencia \"" + (payment.referencia || '').substring(0, 2) + "\" no valida");
+                    }
+                }
             }
         }
 
@@ -787,7 +858,7 @@ define([
                     name: 'REQ_' + dateNow + '.json',
                     contents: JSON.stringify(data),
                     fileType: file.Type.JSON,
-                    folder: 12362
+                    folder: 96285
                 });
                 let requestFileId = requestFile.save();
                 //Respuesta
@@ -795,7 +866,7 @@ define([
                     name: 'RES_' + dateNow + '.json',
                     contents: JSON.stringify(response),
                     fileType: file.Type.JSON,
-                    folder: 12363
+                    folder: 96286
                 });
                 let responseFileId = responseFile.save();
                 if (requestFileId && responseFileId) {

@@ -365,24 +365,30 @@ Scripts utilizados por CONAUTO en NetSuite
 
 - **ComplementoBajas**
 
-  - | Campo          | Tipo   |
-    | -------------- | ------ |
-    | tipo           | String |
-    | idNotificacion | String |
-    | folio          | String |
-    | saldoADevolver | Number |
-    | penalizacion   | Number |
-    | estado         | Number |
+  - | Campo                  | Tipo   |
+    | ---------------------- | ------ |
+    | tipo                   | String |
+    | idNotificacion         | String |
+    | folio                  | String |
+    | saldoADevolver         | Number |
+    | originalSaldoADevolver | Number |
+    | originalPenalizacion   | String |
+    | tipoComplemento        | String |
+    | penalizacion           | Number |
+    | estado                 | Number |
 
   - ```json
     Ejemplo JSON
     {
-        "tipo": "ComplementoBajas",
-        "idNotificacion": "95843",
-        "folio": "9000321",
-        "saldoADevolver": 15124,
-        "penalizacion": 30000,
-        "estado": 6
+      "tipo": "ComplementoBajas",
+      "idNotificacion": "95843",
+      "folio": "1105041",
+      "saldoADevolver": 15124,
+      "originalSaldoADevolver": 12312,
+      "originalPenalizacion": 213482.21,
+      "tipoComplemento": "1",
+      "penalizacion": 30000,
+      "estado": 6
     }
     ```
 
@@ -502,5 +508,53 @@ Scripts utilizados por CONAUTO en NetSuite
         "folio": "1105041",
         "estatus": 5,
         "subestatus": "1"
+    }
+    ```
+
+- **ReclasificacionPrimeraCuota**
+
+  - | Campo             | Tipo                   |
+    | ----------------- | ---------------------- |
+    | tipo              | String                 |
+    | idNotificacion    | String                 |
+    | pagos             | Array[Object]          |
+    | pagos.folio       | String                 |
+    | pagos.referencia  | String                 |
+    | pagos.fecha       | Date Format DD/MM/YYYY |
+    | pagos.monto       | Number                 |
+    | pagos.grupo       | String                 |
+    | pagos.cliente     | String                 |
+    | pagos.formaPago   | String                 |
+    | pagos.importe     | Number                 |
+    | pagos.totalPagado | Number                 |
+    | pagos.aportacion  | Number                 |
+    | pagos.gastos      | Number                 |
+    | pagos.iva         | Number                 |
+    | pagos.seguro_auto | Number                 |
+    | pagos.seguro_vida | Number                 |
+
+  - ```json
+    Ejemplo JSON
+    {
+    "tipo": "ReclasificacionPrimeraCuota",
+    "idNotificacion": "189",
+    "pagos": [
+          {
+            "folio": "1148590",
+            "referencia": "RB23082023",
+            "fecha": "23/08/2023",
+            "monto": 220,
+            "grupo": "5460",
+            "cliente": "50",
+            "formaPago": "01",
+            "importe": 5071.92,
+            "totalPagado": 5071.92,
+            "aportacion": 2829.57,
+            "gastos": 868,
+            "iva": 138.88,
+            "seguro_auto": 197.96,
+            "seguro_vida": 1037.51
+          }
+        ]
     }
     ```
