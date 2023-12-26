@@ -27,21 +27,21 @@ define([
                 format) {
                 let exports = {};
                 /**
-               * <code>execute</code> event handler
-               *
-               * @gov XXX
-               *
-               * @param context
-               *        {Object}
-               * @param context.type
-               *        {InvocationTypes} Enumeration that holds the string values for
-               *            scheduled script execution contexts
-               *
-               * @return {void}
-               *
-               * @static
-               * @function execute
-               */
+         * <code>execute</code> event handler
+         *
+         * @gov XXX
+         *
+         * @param context
+         *        {Object}
+         * @param context.type
+         *        {InvocationTypes} Enumeration that holds the string values for
+         *            scheduled script execution contexts
+         *
+         * @return {void}
+         *
+         * @static
+         * @function execute
+         */
                 function execute(context) {
                         let scriptObj = runtime.getCurrentScript();
                         let logId = scriptObj.getParameter({
@@ -69,6 +69,7 @@ define([
                                         'ModificacionBajas': modificacionBajas,
                                         'ComplementoBajas': complementoBajas,
                                         'AplicacionCobranza': aplicacionCobranza, // También esta identificación cobranza
+                                        'CobranzaIdentificada': cobranzaIdentificada,
                                         'ProvisionCartera': provisionCartera, // CreacionCartera
                                         'CambiarEstatus': cambiarEstatus,
                                         'ReclasificacionPrimeraCuota': reclasificacionPrimeraCuota,
@@ -269,10 +270,7 @@ define([
                                                 fieldId: 'currency',
                                                 value: 1
                                         });
-                                        journal.setValue({
-                                                fieldId: 'memo',
-                                                value: 'Primer pago'
-                                        });
+
                                         journal.setValue({
                                                 fieldId: 'custbody_tipo_transaccion_conauto',
                                                 value: 1
@@ -316,6 +314,11 @@ define([
                                                 }
                                                 let amount = parseFloatRound(payment.monto);
                                                 amountTotal += amount;
+                                                let memoJournal = `Cobranza PRIMERAS CUOTAS de la referencia ${payment.referenciaCompleta} Folio ${folioText}`
+                                                journal.setValue({
+                                                        fieldId: 'memo',
+                                                        value: memoJournal
+                                                });
                                                 journal.selectNewLine({
                                                         sublistId: 'line'
                                                 });
@@ -332,7 +335,7 @@ define([
                                                 journal.setCurrentSublistValue({
                                                         sublistId: 'line',
                                                         fieldId: 'memo',
-                                                        value: 'Cobranza PRIMERAS CUOTAS de la referencia ' + payment.referenciaCompleta
+                                                        value: memoJournal
                                                 });
                                                 journal.setCurrentSublistValue({
                                                         sublistId: 'line',
@@ -379,7 +382,7 @@ define([
                                                 journal.setCurrentSublistValue({
                                                         sublistId: 'line',
                                                         fieldId: 'memo',
-                                                        value: 'Cobranza PRIMERAS CUOTAS de la referencia ' + payment.referenciaCompleta
+                                                        value: memoJournal
                                                 });
                                                 journal.setCurrentSublistValue({
                                                         sublistId: 'line',
@@ -443,7 +446,7 @@ define([
                                                         });
                                                         journal.setValue({
                                                                 fieldId: 'memo',
-                                                                value: 'Primer pago'
+                                                                value: memoJournal
                                                         });
                                                         journal.setValue({
                                                                 fieldId: 'custbody_tipo_transaccion_conauto',
@@ -537,7 +540,8 @@ define([
                                 transactions.push(recordObj.save({
                                         ignoreMandatoryFields: true
                                 }));
-                                foliosId.push(recordFind('customrecord_cseg_folio_conauto', 'anyof', 'externalid', detalle.folio));
+                                let validFolio = recordFind('customrecord_cseg_folio_conauto', 'anyof', 'externalid', detalle.folio)
+                                if (validFolio) foliosId.push(validFolio);
                         }
                         return {
                                 recordType: recordType,
@@ -1215,7 +1219,7 @@ define([
                                                 let folioText = resultAmortizacion.getText({ name: 'custrecord_imr_ep_folio' });
                                                 let cliente = resultAmortizacion.getValue({ name: 'custrecord__imr_ep_cliente' });
                                                 let grupoId = resultAmortizacion.getValue({ name: 'custrecord_imr_ep_grupo' });
-                                                let memo = 'Creación de la cartera por adjudicación de la unidad del cliente ' + grupo + ' - ' + integrante;
+                                                let memo = 'Creación de la cartera por adjudicación de la unidad del cliente Folio ' + folioText + ' - Gpo ' + grupo + ' - Int ' + integrante;
                                                 let type = '16';
                                                 let journalObj = createRecordHeader(record.Type.JOURNAL_ENTRY, preferences, memo, type);
                                                 let accountDebit = preferences.getPreference({
@@ -1245,8 +1249,10 @@ define([
                                                                         { fieldId: 'entity', value: cliente },
                                                                         { fieldId: 'cseg_grupo_conauto', value: grupoId },
                                                                         { fieldId: 'cseg_folio_conauto', value: folio },
+                                                                        { fieldId: 'custcol_folio_texto_conauto', value: folioText },
                                                                         { fieldId: 'memo', value: memo },
                                                                         { fieldId: 'class', value: classId },
+                                                                        { fieldId: 'location', value: 6 }
                                                                 ]);
                                                                 setDataLine(journalObj, 'line', [
                                                                         { fieldId: 'account', value: accountCredit },
@@ -1254,8 +1260,10 @@ define([
                                                                         { fieldId: 'entity', value: cliente },
                                                                         { fieldId: 'cseg_grupo_conauto', value: grupoId },
                                                                         { fieldId: 'cseg_folio_conauto', value: folio },
+                                                                        { fieldId: 'custcol_folio_texto_conauto', value: folioText },
                                                                         { fieldId: 'memo', value: memo },
                                                                         { fieldId: 'class', value: classId },
+                                                                        { fieldId: 'location', value: 6 }
                                                                 ]);
                                                         }
 
@@ -1268,8 +1276,8 @@ define([
 
                                                 let journalSeguroAutoProvisionId = null;
                                                 if (seguroAutoAmount) {
-                                                        let memoSeguroAutoCartera = 'Disminución del pasivo automotriz por aplicación de la cobranza GPO ' + grupo + ' FOL ' + folioText + ' INT ' + integrante;
-                                                        let memoSeguroAutoProvision = 'Disminución del pasivo automotriz por aplicación de la cobranza GPO ' + grupo + ' FOL ' + folioText + ' INT ' + integrante;
+                                                        let memoSeguroAutoCartera = 'Disminución del pasivo automotriz por aplicación de la cobranza FOLIO ' + folioText + ' - GPO ' + grupo + ' - INT ' + integrante;
+                                                        let memoSeguroAutoProvision = 'Disminución del pasivo automotriz por aplicación de la cobranza FOLIO ' + folioText + ' - GPO ' + grupo + ' - INT ' + integrante;
                                                         let accountDebitSeguroAuto = preferences.getPreference({
                                                                 key: 'CCP',
                                                                 reference: 'seguroAutoAumento'
@@ -1287,8 +1295,10 @@ define([
                                                                 { fieldId: 'entity', value: cliente },
                                                                 { fieldId: 'cseg_grupo_conauto', value: grupoId },
                                                                 { fieldId: 'cseg_folio_conauto', value: folio },
+                                                                { fieldId: 'custcol_folio_texto_conauto', value: folioText },
                                                                 { fieldId: 'memo', value: memoSeguroAutoProvision },
                                                                 { fieldId: 'class', value: classSeguroAutoId },
+                                                                { fieldId: 'location', value: 6 }
                                                         ]);
                                                         setDataLine(journalSeguroAutoProvision, 'line', [
                                                                 { fieldId: 'account', value: accountDebitSeguroAuto },
@@ -1296,14 +1306,16 @@ define([
                                                                 { fieldId: 'entity', value: cliente },
                                                                 { fieldId: 'cseg_grupo_conauto', value: grupoId },
                                                                 { fieldId: 'cseg_folio_conauto', value: folio },
+                                                                { fieldId: 'custcol_folio_texto_conauto', value: folioText },
                                                                 { fieldId: 'memo', value: memoSeguroAutoProvision },
                                                                 { fieldId: 'class', value: classSeguroAutoId },
+                                                                { fieldId: 'location', value: 6 }
                                                         ]);
                                                         /* //L.R.M.R. 24/08/2021 Solicitan que ya no se este generando este diario
-                                    journalSeguroAutoCarteraId = journalSeguroAutoCartera.save({
-                                            ignoreMandatoryFields:true
-                                    });
-                                    */
+                                journalSeguroAutoCarteraId = journalSeguroAutoCartera.save({
+                                        ignoreMandatoryFields:true
+                                });
+                                */
                                                         journalSeguroAutoProvisionId = journalSeguroAutoProvision.save({
                                                                 ignoreMandatoryFields: true
                                                         });
@@ -1755,7 +1767,7 @@ define([
                                         message: "La lista de pagos esta vacia"
                                 })
                         }
-                        let mandatoryFields = ["referencia", "fechaCobranza", "status", "fechaPago", "folio", "monto", "aportacion", "total_pagar", "formaPago", "numPago"];
+                        let mandatoryFields = ["referencia", "fechaCobranza", "fechaPago", "folio", "monto", "aportacion", "total_pagar", "formaPago", "numPago"];
                         let line = 0;
                         for (let payment of payments) {
                                 line++;
@@ -1857,6 +1869,7 @@ define([
                                                 fieldId: "custrecord_con_log_request2",
                                                 value: logId
                                         })
+                                        if (!payment.status) fields.pop();
                                         for (let field of fields) {
                                                 let fieldId = field.fieldRecord;
                                                 let value = payment[field.field];
@@ -1889,6 +1902,14 @@ define([
                                                 for (let fieldId of FieldJournalEntries) {
                                                         let transactionId = pagoAmortizacion.getValue(fieldId);
                                                         if (transactionId) transactions.push(transactionId);
+                                                        if (fieldId == "custrecord_imr_pa_factura" && transactionId) {
+                                                                let generateCFDI = record.load({
+                                                                        type: record.Type.CASH_SALE,
+                                                                        id: pagoAmortizacion.getValue(fieldId),
+                                                                        isDynamic: true
+                                                                });
+                                                                generateCFDI.save();
+                                                        }
                                                 }
                                         } catch (e) {
                                                 errors.push(e.toString())
@@ -1985,7 +2006,7 @@ define([
                                         payment["integrante"] = clienteInfo.custrecord_imr_integrante_conauto;
                                         let integrante = payment.integrante;
                                         let grupoId = clienteInfo.custrecord_grupo[0].value;
-                                        let memo = `Creación de la provisión cartera del cliente ${grupo} - ${integrante} No de Folio ${folioText}`;
+                                        let memo = `Creación de la provisión cartera No de Folio ${folioText} - Gpo ${grupo} - Int ${integrante}`;
                                         let type = '16';
                                         let journalObj = createRecordHeader(record.Type.JOURNAL_ENTRY, preferences, memo, type);
                                         let accountDebit = preferences.getPreference({
@@ -2012,8 +2033,10 @@ define([
                                                                 { fieldId: 'entity', value: cliente },
                                                                 { fieldId: 'cseg_grupo_conauto', value: grupoId },
                                                                 { fieldId: 'cseg_folio_conauto', value: folio },
+                                                                { fieldId: 'custcol_folio_texto_conauto', value: folioText },
                                                                 { fieldId: 'memo', value: memo },
                                                                 { fieldId: 'class', value: classId },
+                                                                { fieldId: 'location', value: 6 }
                                                         ]);
                                                         setDataLine(journalObj, 'line', [
                                                                 { fieldId: 'account', value: accountCredit },
@@ -2021,8 +2044,10 @@ define([
                                                                 { fieldId: 'entity', value: cliente },
                                                                 { fieldId: 'cseg_grupo_conauto', value: grupoId },
                                                                 { fieldId: 'cseg_folio_conauto', value: folio },
+                                                                { fieldId: 'custcol_folio_texto_conauto', value: folioText },
                                                                 { fieldId: 'memo', value: memo },
                                                                 { fieldId: 'class', value: classId },
+                                                                { fieldId: 'location', value: 6 }
                                                         ]);
                                                 }
 
@@ -2055,8 +2080,10 @@ define([
                                                         { fieldId: 'entity', value: cliente },
                                                         { fieldId: 'cseg_grupo_conauto', value: grupoId },
                                                         { fieldId: 'cseg_folio_conauto', value: folio },
+                                                        { fieldId: 'custcol_folio_texto_conauto', value: folioText },
                                                         { fieldId: 'memo', value: memo },
                                                         { fieldId: 'class', value: classSeguroAutoId },
+                                                        { fieldId: 'location', value: 6 }
                                                 ]);
                                                 setDataLine(journalSeguroAuto, 'line', [
                                                         { fieldId: 'account', value: accountDebitSeguroAuto },
@@ -2064,8 +2091,10 @@ define([
                                                         { fieldId: 'entity', value: cliente },
                                                         { fieldId: 'cseg_grupo_conauto', value: grupoId },
                                                         { fieldId: 'cseg_folio_conauto', value: folio },
+                                                        { fieldId: 'custcol_folio_texto_conauto', value: folioText },
                                                         { fieldId: 'memo', value: memo },
                                                         { fieldId: 'class', value: classSeguroAutoId },
+                                                        { fieldId: 'location', value: 6 }
                                                 ]);
 
                                                 let journalSeguroAutoId = journalSeguroAuto.save({
@@ -2220,7 +2249,7 @@ define([
                                                 "seguroAuto": parseFloat(payment.seguro_auto),
                                                 "aportacion": parseFloat(payment.aportacion)
                                         }
-                                        let memo = `Identificacion de la cobranza Recibida de la referencia ${referencia} ${payment.grupo}-${payment.integrante}`;
+                                        let memo = `Identificacion de la cobranza Recibida de la referencia ${referencia} - Folio ${folioText} - Gpo ${payment.grupo} - Int${payment.integrante}`;
                                         // ----------------
                                         log.error("LLENA DATOS", montosReparto)
                                         let preferences = conautoPreferences.get();
@@ -2489,6 +2518,205 @@ define([
                         };
                 }
 
+                /***
+         *
+         * @param data
+         * @param {String} data.tipo  tipo de request
+         * @param {Object[]} data.detalles Lista de solicitudes de pagos
+         * @param {String} data.detalles[].tipoMovimiento Id del tipo de movimiento
+         * @param {Number} data.detalles[].monto monto del pago
+         * @param {String} data.detalles[].folio folio
+         * @param {String} data.detalles[].cuentaBancaria Identidicador de la cuenta
+         * @param {Object} data.detalles[].beneficiario Objecto con el beneficiario
+         * @param {Object} data.detalles[].beneficiario.rfc rfc del beneficiario
+         * @param {Object} data.detalles[].beneficiario.nombre nombre del beneficiario
+         * @param response
+         * @param {Number} response.code
+         * @param {Array} response.Info
+         */
+                function cobranzaIdentificada(data, logId) {
+                        var records = [];
+                        var errors = [];
+                        var transactions = [];
+                        var folios = [];
+                        var recordType = "customrecord_imr_pagos_amortizacion";
+                        var payments = data.pagos || [];
+                        if (payments.length == 0) {
+                                throw error.create({
+                                        name: "EMPTY_PAYMENT_LIST_FIRSTPAYMENT",
+                                        message: "La lista de pagos esta vacia"
+                                })
+                        }
+                        var mandatoryFields = ["referenciaCompleta", "fechaCobranza", "fechaPago", "folioCorrecto", "folioIncorrecto", "monto", "aportacion", "gastos", "iva", "seguro_auto", "seguro_vida"];
+                        var errors = [];
+                        var pagosId = [];
+                        var dataPayments = {};
+                        for (var i = 0; i < payments.length; i++) {
+                                var payment = payments[i];
+                                checkMandatoryFields(payment, mandatoryFields, i + 1, errors);
+                                pagosId.push(payment.id);
+                                dataPayments[payment.id] = payment;
+                        }
+                        if (errors.length == 0) {
+                                var fields = [
+                                        {
+                                                type: "text",
+                                                field: "folioIncorrecto",
+                                                fieldRecord: "custrecord_imr_pa_folio_texto"
+                                        },
+                                        {
+                                                type: "number",
+                                                field: "monto",
+                                                fieldRecord: "custrecord_imr_pa_importe"
+                                        },
+                                        {
+                                                type: "number",
+                                                field: "aportacion",
+                                                fieldRecord: "custrecord_conauto_aportacion"
+                                        },
+                                        {
+                                                type: "number",
+                                                field: "gastos",
+                                                fieldRecord: "custrecord_conauto_gastos"
+                                        },
+                                        {
+                                                type: "number",
+                                                field: "iva",
+                                                fieldRecord: "custrecord_conauto_iva"
+                                        },
+                                        {
+                                                type: "number",
+                                                field: "seguro_auto",
+                                                fieldRecord: "custrecord_conauto_seguro_auto"
+                                        },
+                                        {
+                                                type: "number",
+                                                field: "seguro_vida",
+                                                fieldRecord: "custrecord_conauto_seguro_vida"
+                                        },
+                                        {
+                                                type: "number",
+                                                field: "total_pagar",
+                                                fieldRecord: "custrecord_conauto_total_pagar"
+                                        },
+                                        {
+                                                type: "text",
+                                                field: "formaPago",
+                                                fieldRecord: "custrecord_imr_pa_forma_pago",
+                                                callback: function (value) { return getFormaPago(value) }
+                                        },
+                                        {
+                                                type: "date",
+                                                field: "fechaCobranza",
+                                                fieldRecord: "custrecord_imr_pa_fecha"
+                                        },
+                                        {
+                                                type: "date",
+                                                field: "fechaPago",
+                                                fieldRecord: "custrecord_imr_pa_fecha_pago"
+                                        },
+                                        {
+                                                type: "text",
+                                                field: "referenciaCompleta",
+                                                fieldRecord: "custrecord_imr_pa_referencia_completa"
+                                        },
+                                        {
+                                                type: "text",
+                                                field: "referencia",
+                                                fieldRecord: "custrecord_imr_pa_referencia",
+                                                callback: function (value) {
+                                                        return (value || '').substring(0, 2)
+                                                }
+                                        },
+                                        {
+                                                type: "text",
+                                                field: "id",
+                                                fieldRecord: "externalid"
+                                        },
+                                        {
+                                                type: "text",
+                                                field: "numPago",
+                                                fieldRecord: "custrecord_conauto_num_payment_service"
+                                        }
+                                ]
+                                for (let payment of payments) {
+                                        let recordPagoObj = record.create({
+                                                type: recordType,
+                                                isDynamic: true
+                                        });
+                                        recordPagoObj.setValue({
+                                                fieldId: "custrecord_con_log_request2",
+                                                value: logId
+                                        })
+                                        recordPagoObj.setText({
+                                                fieldId: "custrecord_imr_pa_folio",
+                                                text: payment.folioCorrecto
+                                        })
+                                        recordPagoObj.setValue({
+                                                fieldId: "custrecord_imr_pa_rec_pago",
+                                                value: true
+                                        })
+                                        for (let field of fields) {
+                                                let fieldId = field.fieldRecord;
+                                                let value = payment[field.field];
+                                                if (field.callback) {
+                                                        value = field.callback(value);
+                                                }
+                                                value = getValueFormat(field.type, value);
+                                                recordPagoObj.setValue({
+                                                        fieldId: fieldId,
+                                                        value: value
+                                                });
+                                        }
+                                        try {
+                                                let recordPagoId = recordPagoObj.save({
+                                                        ignoreMandatoryFields: true
+                                                });
+                                                records.push(recordPagoId);
+
+                                                let pagoAmortizacion = record.load({
+                                                        type: recordType,
+                                                        id: recordPagoId,
+                                                        isDynamic: true
+                                                });
+                                                let folioId = pagoAmortizacion.getValue("custrecord_imr_pa_folio");
+                                                if (folioId) folios.push(folioId);
+                                                let FieldJournalEntries = ["custrecord_imr_pa_diario", "custrecord_imr_pa_diario_cancelacion", "custrecord_imr_pa_diario_reinstalacion",
+                                                        "custrecord_imr_pa_diario_cxp", "custrecord_imr_pa_diario_can_cxp", "custrecord__imr_pa_diario_seg_auto",
+                                                        "custrecord_imr_pa_factura", "custrecord_imr_pa_nota_credito", "custrecord_imr_pa_diario_cartera",
+                                                        "custrecord_imr_pa_diario_no_iden", "custrecord_imr_pa_diario_can_segauto", "custrecord_imr_pa_diario_can_cartera"];
+                                                for (let fieldId of FieldJournalEntries) {
+                                                        let transactionId = pagoAmortizacion.getValue(fieldId);
+                                                        if (transactionId) transactions.push(transactionId);
+                                                        if (fieldId == "custrecord_imr_pa_factura") {
+                                                                let generateCFDI = record.load({
+                                                                        type: record.Type.CASH_SALE,
+                                                                        id: pagoAmortizacion.getValue(fieldId),
+                                                                        isDynamic: true
+                                                                });
+                                                                generateCFDI.save();
+                                                        }
+                                                }
+                                        } catch (e) {
+                                                errors.push(e.toString())
+                                        }
+                                }
+                        } else {
+                                throw error.create({
+                                        name: "DATA_ERROR_PAYMENTS",
+                                        message: errors.join("\n")
+                                })
+                        }
+                        return {
+                                recordType: recordType,
+                                transactions: transactions,
+                                records: records,
+                                solPagos: [],
+                                folios: folios,
+                                errors: errors
+                        };
+                }
+
 
                 function applyPaymentLine(recordObj, line) {
                         let payments = 0;
@@ -2742,7 +2970,7 @@ define([
                                         let subsidiary = preferences.getPreference({
                                                 key: "SUBCONAUTO"
                                         });
-                                        let memo = `Cuenta por pagar a proveedores por cobranza recibida referencia ${referenceCompleta} ${payment.grupo}-${payment.integrante}`;
+                                        let memo = `Cuenta por pagar a proveedores por cobranza recibida referencia ${referenceCompleta} - Folio ${folioText} - Gpo ${payment.grupo} - Int ${payment.integrante}`;
 
                                         let diarioObj = record.create({
                                                 type: record.Type.JOURNAL_ENTRY,
@@ -2777,6 +3005,11 @@ define([
                                                 reference: 'gastosPorPagar'
                                         });
 
+                                        let classId = preferences.getPreference({
+                                                key: 'CLSP',
+                                                reference: 'gastos'
+                                        });
+
                                         addLineJournal(diarioObj, cuentaDebito, true, gastos, {
                                                 memo: memo,
                                                 custcol_referencia_conauto: reference,
@@ -2785,6 +3018,7 @@ define([
                                                 cseg_folio_conauto: folioId,
                                                 cseg_grupo_conauto: grupoId,
                                                 entity: cliente,
+                                                class: classId,
                                                 location: 6
                                         });
                                         addLineJournal(diarioObj, accountCredit, false, gastos, {
@@ -2795,6 +3029,7 @@ define([
                                                 cseg_folio_conauto: folioId,
                                                 cseg_grupo_conauto: grupoId,
                                                 entity: cliente,
+                                                class: classId,
                                                 location: 6
                                         });
                                         journalId = diarioObj.save({
@@ -2835,7 +3070,7 @@ define([
                                         let item = preferences.getPreference({
                                                 key: "ARTINADM"
                                         });
-                                        let memo = `Cobranza Recibida en Sistema de Comercialización ${folioText} - ${grupoText}-${payment.integrante} de la referencia ${referenciaCompleta}`;
+                                        let memo = `Cobranza Recibida en Sistema de Comercialización de la referencia ${referenciaCompleta} - Folio ${folioText} - Gpo ${grupoText} - Int ${payment.integrante}`;
 
                                         facturaObj.setValue({
                                                 fieldId: "entity",

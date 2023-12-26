@@ -147,8 +147,8 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                 let amortizacionId = newRecord.getValue({
                     fieldId: "custrecord_imr_pa_amortizacion"
                 });
-                let folioText = newRecord.getValue({
-                    fieldId: "custrecord_imr_pa_folio_texto",
+                let folioText = newRecord.getText({
+                    fieldId: "custrecord_imr_pa_folio",
                 });
                 let folioId = newRecord.getValue({
                     fieldId: "custrecord_imr_pa_folio",
@@ -255,7 +255,7 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                                         ignoreMandatoryFields: true
                                     });
                                 } else {
-                                    let idDiario = crearDiarioIndetificado(preferences, montosReparto, diarioNoIden, recerencia, date, importe, formaPago, folioText, folioId, grupoId, cliente, recerenciaCompleta, newRecord, integranteText, grupoText);
+                                    let idDiario = crearDiarioIndetificado(preferences, montosReparto, diarioNoIden, recerencia, date, importe, formaPago, folioText, folioId, grupoId, cliente, recerenciaCompleta, newRecord, integranteText, grupoText, newRecord);
                                     newRecord.setValue({
                                         fieldId: "custrecord_imr_pa_aplicado",
                                         value: true
@@ -561,6 +561,9 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                 let folioText = pagoObj.getText({
                     fieldId: "custrecord_imr_pa_folio"
                 });
+                let folioColumnText = pagoObj.getText({
+                    fieldId: "custrecord_imr_pa_folio_texto"
+                });
                 let folioId = pagoObj.getValue({
                     fieldId: "custrecord_imr_pa_folio"
                 });
@@ -591,7 +594,7 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                         type: record.Type.JOURNAL_ENTRY,
                         isDynamic: true
                     });
-                    let memo = "Disminución de la cartera por la cobranza recibida Grupo " + grupoText + " folio " + folioText + " - Int " + integrante + " de la referencia " + referenceCompleta;
+                    let memo = "Disminución de la cartera por la cobranza recibida de la referencia " + referenceCompleta + " - Folio " + folioText + " - Gpo " + grupoText + " - Int " + integrante;
                     let subsidiary = preferences.getPreference({
                         key: "SUBCONAUTO"
                     });
@@ -642,21 +645,23 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                             memo: memo,
                             custcol_referencia_conauto: referenceCompleta,
                             custcol_metodo_pago_conauto: formaPago,
-                            custcol_folio_texto_conauto: folioText,
+                            custcol_folio_texto_conauto: folioColumnText,
                             cseg_folio_conauto: folioId,
                             cseg_grupo_conauto: grupoId,
                             entity: cliente,
-                            class: mapClass[concepto]
+                            class: mapClass[concepto],
+                            location: 6
                         });
                         addLineJournal(diarioObj, cuentaCredito, true, monto, {
                             memo: memo,
                             custcol_referencia_conauto: referenceCompleta,
                             custcol_metodo_pago_conauto: formaPago,
-                            custcol_folio_texto_conauto: folioText,
+                            custcol_folio_texto_conauto: folioColumnText,
                             cseg_folio_conauto: folioId,
                             cseg_grupo_conauto: grupoId,
                             entity: cliente,
-                            class: mapClass[concepto]
+                            class: mapClass[concepto],
+                            location: 6
                         });
                     }
                     let diarioId = diarioObj.save({
@@ -719,6 +724,9 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                 let folioText = pagoObj.getText({
                     fieldId: "custrecord_imr_pa_folio"
                 });
+                let folioColumnText = pagoObj.getText({
+                    fieldId: "custrecord_imr_pa_folio_texto"
+                });
                 let folioId = pagoObj.getValue({
                     fieldId: "custrecord_imr_pa_folio"
                 });
@@ -777,7 +785,7 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                         type: record.Type.JOURNAL_ENTRY,
                         isDynamic: true
                     });
-                    let memo = "Reversión cobro cartera por cheque devuelto del gto " + grupoText + " int " + integrante + " referencia " + referenceCompleta;
+                    let memo = "Reversión cobro cartera por cheque devuelto de la referencia " + referenceCompleta + " - Folio " + folioText + " - Gpo " + grupoText + " - Int " + integrante;
                     let subsidiary = preferences.getPreference({
                         key: "SUBCONAUTO"
                     });
@@ -825,21 +833,23 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                                 memo: memo,
                                 custcol_referencia_conauto: referenceCompleta,
                                 custcol_metodo_pago_conauto: formaPago,
-                                custcol_folio_texto_conauto: folioText,
+                                custcol_folio_texto_conauto: folioColumnText,
                                 cseg_folio_conauto: folioId,
                                 cseg_grupo_conauto: grupoId,
                                 entity: cliente,
-                                class: mapClass[field]
+                                class: mapClass[field],
+                                location: 6
                             });
                             addLineJournal(diarioObj, cuentaCredito, false, value.toFixed(2), {
                                 memo: memo,
                                 custcol_referencia_conauto: referenceCompleta,
                                 custcol_metodo_pago_conauto: formaPago,
-                                custcol_folio_texto_conauto: folioText,
+                                custcol_folio_texto_conauto: folioColumnText,
                                 cseg_folio_conauto: folioId,
                                 cseg_grupo_conauto: grupoId,
                                 entity: cliente,
-                                class: mapClass[field]
+                                class: mapClass[field],
+                                location: 6
                             });
                         }
                     }
@@ -1080,6 +1090,9 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                 let folioText = pagoObj.getText({
                     fieldId: "custrecord_imr_pa_folio"
                 });
+                let folioColumnText = pagoObj.getText({
+                    fieldId: "custrecord_imr_pa_folio_texto"
+                });
                 let folioId = pagoObj.getValue({
                     fieldId: "custrecord_imr_pa_folio"
                 });
@@ -1111,7 +1124,7 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                     let subsidiary = preferences.getPreference({
                         key: "SUBCONAUTO"
                     });
-                    let memo = "Reversion cobro cartera por cheque devuelto del Grupo " + grupoText + " - Int " + integrante + "  referencia " + referenceCompleta;
+                    let memo = "Reversion cobro cartera por cheque devuelto de la referencia " + referenceCompleta + " - Folio " + folioText + " - Gpo " + grupoText + " - Int " + integrante;
                     let diarioObj = record.create({
                         type: record.Type.JOURNAL_ENTRY,
                         isDynamic: true
@@ -1152,19 +1165,21 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                         memo: memo,
                         custcol_referencia_conauto: referenceCompleta,
                         custcol_metodo_pago_conauto: formaPago,
-                        custcol_folio_texto_conauto: folioText,
+                        custcol_folio_texto_conauto: folioColumnText,
                         cseg_folio_conauto: folioId,
                         cseg_grupo_conauto: grupoId,
-                        entity: cliente
+                        entity: cliente,
+                        location: 6
                     });
                     addLineJournal(diarioObj, accountCredit, false, seguro.toFixed(2), {
                         memo: memo,
                         custcol_referencia_conauto: referenceCompleta,
                         custcol_metodo_pago_conauto: formaPago,
-                        custcol_folio_texto_conauto: folioText,
+                        custcol_folio_texto_conauto: folioColumnText,
                         cseg_folio_conauto: folioId,
                         cseg_grupo_conauto: grupoId,
-                        entity: cliente
+                        entity: cliente,
+                        location: 6
                     });
                     journalId = diarioObj.save({
                         ignoreMandatoryFields: true,
@@ -1222,9 +1237,13 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                 let folioText = pagoObj.getText({
                     fieldId: "custrecord_imr_pa_folio"
                 });
+                let folioColumnText = pagoObj.getText({
+                    fieldId: "custrecord_imr_pa_folio_texto"
+                });
                 let referenceCompleta = pagoObj.getValue({
                     fieldId: "custrecord_imr_pa_referencia_completa"
                 });
+
                 let folioId = pagoObj.getValue({
                     fieldId: "custrecord_imr_pa_folio"
                 });
@@ -1257,9 +1276,9 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                         id: trasladoContrato,
                         columns: ["custrecord_imr_trascon_integrante", "custrecord_imr_trascon_grupo", "custrecord_imr_trascon_grupo_cancelacion", "custrecord_imr_trascon_integrante_cance"]
                     });
-                    memoTrasladoContrato = " Traspaso del grupo " + dataTrasladoContato.custrecord_imr_trascon_grupo_cancelacion.text + " integrante " + dataTrasladoContato.custrecord_imr_trascon_integrante_cance.value + " al grupo " + dataTrasladoContato.custrecord_imr_trascon_grupo.text + "integrante " + dataTrasladoContato.custrecord_imr_trascon_integrante.value + "  de la regerencia " + referenceCompleta;
+                    memoTrasladoContrato = " Traspaso del grupo " + dataTrasladoContato.custrecord_imr_trascon_grupo_cancelacion.text + " integrante " + dataTrasladoContato.custrecord_imr_trascon_integrante_cance.value + " al grupo " + dataTrasladoContato.custrecord_imr_trascon_grupo.text + "integrante " + dataTrasladoContato.custrecord_imr_trascon_integrante.value + "  de la referencia " + referenceCompleta;
                 } else {
-                    memoTrasladoContrato = " grupo " + grupoTexto + " integrante " + integranteTexto + " de la regerencia " + referenceCompleta;
+                    memoTrasladoContrato = " de la referencia " + referenceCompleta + " - Folio " + folioText + " - Gpo " + grupoTexto + " - Int " + integranteTexto;
                 }
 
                 if (!journalCancelacionId && journalId && gastos < 0) {
@@ -1309,19 +1328,21 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                         memo: memo,
                         custcol_referencia_conauto: reference,
                         custcol_metodo_pago_conauto: formaPago,
-                        custcol_folio_texto_conauto: folioText,
+                        custcol_folio_texto_conauto: folioColumnText,
                         cseg_folio_conauto: folioId,
                         cseg_grupo_conauto: grupoId,
-                        entity: cliente
+                        entity: cliente,
+                        location: 6
                     });
                     addLineJournal(diarioObj, accountCredit, false, Math.abs(gastos).toFixed(2), {
                         memo: memo,
                         custcol_referencia_conauto: reference,
                         custcol_metodo_pago_conauto: formaPago,
-                        custcol_folio_texto_conauto: folioText,
+                        custcol_folio_texto_conauto: folioColumnText,
                         cseg_folio_conauto: folioId,
                         cseg_grupo_conauto: grupoId,
-                        entity: cliente
+                        entity: cliente,
+                        location: 6
                     });
                     journalId = diarioObj.save({
                         ignoreMandatoryFields: true,
@@ -1354,6 +1375,9 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                 let subEstado = pagoObj.getValue({
                     fieldId: "custrecord_imr_pa_subestado_folio"
                 });
+                let folioColumnText = pagoObj.getText({
+                    fieldId: "custrecord_imr_pa_folio_texto"
+                });
                 let integranteText = pagoObj.getText({
                     fieldId: "custrecord_imr_pa_integrante"
                 });
@@ -1379,7 +1403,7 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                 let subsidiary = preferences.getPreference({
                     key: "SUBCONAUTO"
                 });
-                let memoJournal = "Reclasificación del registro de la cobranza por Reinstalacion de la referencia " + recerenciaCompleta + " " + grupoText + "-" + integranteText;
+                let memoJournal = "Reclasificación del registro de la cobranza por Reinstalacion de la referencia " + recerenciaCompleta + " - Folio " + folioColumnText + " - Gpo " + grupoText + " - Int" + integranteText;
                 let diarioObj = record.create({
                     type: record.Type.JOURNAL_ENTRY,
                     isDynamic: true
@@ -1412,10 +1436,11 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                     memo: memoJournal,
                     custcol_referencia_conauto: recerenciaCompleta,
                     custcol_metodo_pago_conauto: formaPago,
-                    custcol_folio_texto_conauto: folioText,
+                    custcol_folio_texto_conauto: folioColumnText,
                     cseg_folio_conauto: folioId,
                     cseg_grupo_conauto: grupoId,
-                    entity: cliente
+                    entity: cliente,
+                    location: 6
                 });
 
                 for (let concepto in montosReparto) {
@@ -1441,22 +1466,24 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                             memo: memoJournal,
                             custcol_referencia_conauto: recerenciaCompleta,
                             custcol_metodo_pago_conauto: formaPago,
-                            custcol_folio_texto_conauto: folioText,
+                            custcol_folio_texto_conauto: folioColumnText,
                             cseg_folio_conauto: folioId,
                             cseg_grupo_conauto: grupoId,
                             class: classId,
-                            entity: cliente
+                            entity: cliente,
+                            location: 6
                         });
                     } else {
                         addLineJournal(diarioObj, CuentaConcepto, false, importeConcepto.toFixed(2), {
                             memo: memoJournal,
                             custcol_referencia_conauto: recerenciaCompleta,
                             custcol_metodo_pago_conauto: formaPago,
-                            custcol_folio_texto_conauto: folioText,
+                            custcol_folio_texto_conauto: folioColumnText,
                             cseg_folio_conauto: folioId,
                             cseg_grupo_conauto: grupoId,
                             class: classId,
-                            entity: cliente
+                            entity: cliente,
+                            location: 6
                         });
                     }
                 }
@@ -1517,6 +1544,9 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                 let folioText = pagoObj.getText({
                     fieldId: "custrecord_imr_pa_folio"
                 });
+                let folioColumnText = pagoObj.getText({
+                    fieldId: "custrecord_imr_pa_folio_texto"
+                });
                 let referenceCompleta = pagoObj.getValue({
                     fieldId: "custrecord_imr_pa_referencia_completa"
                 });
@@ -1533,7 +1563,7 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                     let subsidiary = preferences.getPreference({
                         key: "SUBCONAUTO"
                     });
-                    let memo = "Cuenta por pagar a proveedores por cobranza recibida " + (tipoBoletaTexto ? ('por ' + tipoBoletaTexto) : '') + "" + (reinstalacion ? ' Reinstalación' : '') + " referencia " + referenceCompleta + " " + grupoText + "-" + integranteText;
+                    let memo = "Cuenta por pagar a proveedores por cobranza recibida " + (tipoBoletaTexto ? ('por ' + tipoBoletaTexto) : '') + "" + (reinstalacion ? ' Reinstalación' : '') + " referencia " + referenceCompleta + " - Folio " + folioText + " - Gpo " + grupoText + " - Int " + integranteText;
 
                     let diarioObj = record.create({
                         type: record.Type.JOURNAL_ENTRY,
@@ -1572,24 +1602,31 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                         reference: 'gastosPorPagar'
                     });
 
+                    let classId = preferences.getPreference({
+                        key: 'CLSP',
+                        reference: 'gastos'
+                    });
+
                     addLineJournal(diarioObj, cuentaDebito, true, gastos, {
                         memo: memo,
                         custcol_referencia_conauto: reference,
                         custcol_metodo_pago_conauto: formaPago,
-                        custcol_folio_texto_conauto: folioText,
+                        custcol_folio_texto_conauto: folioColumnText,
                         cseg_folio_conauto: folioId,
                         cseg_grupo_conauto: grupoId,
                         entity: cliente,
+                        class: classId,
                         location: 6
                     });
                     addLineJournal(diarioObj, accountCredit, false, gastos, {
                         memo: memo,
                         custcol_referencia_conauto: reference,
                         custcol_metodo_pago_conauto: formaPago,
-                        custcol_folio_texto_conauto: folioText,
+                        custcol_folio_texto_conauto: folioColumnText,
                         cseg_folio_conauto: folioId,
                         cseg_grupo_conauto: grupoId,
                         entity: cliente,
+                        class: classId,
                         location: 6
                     });
                     journalId = diarioObj.save({
@@ -1651,11 +1688,20 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                 let folioText = pagoObj.getText({
                     fieldId: "custrecord_imr_pa_folio"
                 });
+                let folioColumnText = pagoObj.getText({
+                    fieldId: "custrecord_imr_pa_folio_texto"
+                });
                 let folioId = pagoObj.getValue({
                     fieldId: "custrecord_imr_pa_folio"
                 });
                 let grupoId = pagoObj.getValue({
                     fieldId: "custrecord_imr_pa_grupo"
+                });
+                let grupoText = pagoObj.getText({
+                    fieldId: "custrecord_imr_pa_grupo"
+                });
+                let integranteText = pagoObj.getText({
+                    fieldId: "custrecord_imr_pa_integrante"
                 });
 
                 if ((["1", "2", "4"].indexOf(tipoBoleta) != -1 || esPrimerPago || true) && !journalId && seguro > 0) {
@@ -1667,7 +1713,7 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                     let subsidiary = preferences.getPreference({
                         key: "SUBCONAUTO"
                     });
-                    let memo = "DISMINUCION DE SEGURO AUTO POR APLICACIÓN DE LA COBRANZA DE LA REFERENCIA " + referenceCompleta + (reinstalacion ? ' POR REINSTALACIóN' : '')//+getReferenciaMemo(pagoObj);
+                    let memo = "DISMINUCION DE SEGURO AUTO POR APLICACIÓN DE LA COBRANZA DE LA REFERENCIA " + referenceCompleta + (reinstalacion ? ' POR REINSTALACIóN' : '') + " - Folio " + folioText + " - Gpo " + grupoText + " - Int " + integranteText//+getReferenciaMemo(pagoObj);
                     let diarioObj = record.create({
                         type: record.Type.JOURNAL_ENTRY,
                         isDynamic: true
@@ -1704,25 +1750,31 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                         key: "CCP",
                         reference: 'seguroAutoDisminucion'
                     });
+                    let classId = preferences.getPreference({
+                        key: 'CLSP',
+                        reference: 'seguroAuto'
+                    });
 
                     addLineJournal(diarioObj, cuentaDebito, true, seguro.toFixed(2), {
                         memo: memo,
                         custcol_referencia_conauto: referenceCompleta,
                         custcol_metodo_pago_conauto: formaPago,
-                        custcol_folio_texto_conauto: folioText,
+                        custcol_folio_texto_conauto: folioColumnText,
                         cseg_folio_conauto: folioId,
                         cseg_grupo_conauto: grupoId,
                         entity: cliente,
+                        class: classId,
                         location: 6
                     });
                     addLineJournal(diarioObj, accountCredit, false, seguro.toFixed(2), {
                         memo: memo,
                         custcol_referencia_conauto: referenceCompleta,
                         custcol_metodo_pago_conauto: formaPago,
-                        custcol_folio_texto_conauto: folioText,
+                        custcol_folio_texto_conauto: folioColumnText,
                         cseg_folio_conauto: folioId,
                         cseg_grupo_conauto: grupoId,
                         entity: cliente,
+                        class: classId,
                         location: 6
                     });
                     journalId = diarioObj.save({
@@ -1815,7 +1867,7 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                     let item = preferences.getPreference({
                         key: "ARTINADM"
                     });
-                    let memo = "Cobranza Recibida en Sistema de Comercialización " + folioText + " - " + grupoText + "-" + integranteText + " de la referencia " + recerenciaCompleta;
+                    let memo = "Cobranza Recibida en Sistema de Comercialización de la referencia " + recerenciaCompleta + " - Folio " + folioText + " - Gpo " + grupoText + " - Int " + integranteText;
 
                     facturaObj.setValue({
                         fieldId: "entity",
@@ -1829,6 +1881,10 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                         fieldId: "custbody_imr_tippolcon",
                         value: 5
                     });
+                    facturaObj.setValue({
+                        fieldId: "custbody_ce_tipo_de_poliza",
+                        value: 1
+                    })
                     facturaObj.setValue({
                         fieldId: "undepfunds",
                         value: 'F'
@@ -1926,13 +1982,12 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                     });
                     log.error('ERROR', 'facturaId: ' + facturaId);
                     conautoPreferences.setFolioConauto(facturaId);
+
                     pagoObj.setValue({
                         fieldId: "custrecord_imr_pa_factura",
                         value: facturaId
                     })
-                    pagoObj.save({
-                        ignoreMandatoryFields: true
-                    })
+                    pagoObj.save()
                 }
             } catch (e) {
                 log.error('createInvoice', 'Linea 1798: ' + e);
@@ -1978,10 +2033,13 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                     let grupoText = pagoObj.getText({
                         fieldId: "custrecord_imr_pa_grupo"
                     });
+                    let folioText = pagoObj.getText({
+                        fieldId: "custrecord_imr_pa_folio"
+                    });
                     let integranteText = pagoObj.getText({
                         fieldId: "custrecord_imr_pa_integrante"
                     });
-                    let memo = "Diario de cancelación de pago grp " + grupoText + " int " + integranteText + " de la referencia " + referenceCompleta;
+                    let memo = "Diario de cancelación de pago de la referencia " + referenceCompleta + " - Folio " + folioText + " - Gpo " + grupoText + " - Int " + integranteText;
                     let accountTrasladoContrato = preferences.getPreference({
                         key: "TEC"
                     });
@@ -2076,7 +2134,7 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
             }
         }
 
-        function crearDiarioIndetificado(preferences, montosReparto, diarioNoIden, recerencia, date, importe, formaPago, folioText, folioId, grupoId, cliente, recerenciaCompleta, newRecord, integranteText, grupoText) {
+        function crearDiarioIndetificado(preferences, montosReparto, diarioNoIden, recerencia, date, importe, formaPago, folioText, folioId, grupoId, cliente, recerenciaCompleta, newRecord, integranteText, grupoText, pagoObj) {
             try {
                 let cuentaCobranza = null;
                 if (diarioNoIden) {
@@ -2092,6 +2150,9 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                 let folioObj = record.load({
                     type: "customrecord_cseg_folio_conauto",
                     id: folioId
+                });
+                let folioColumnText = pagoObj.getText({
+                    fieldId: "custrecord_imr_pa_folio_texto"
                 });
                 let estado = folioObj.getValue({
                     fieldId: "custrecord_folio_estado"
@@ -2122,9 +2183,10 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                     fieldId: "currency",
                     value: 1
                 });
+                let memoText = "identificacion de la cobranza Recibida de la referencia  " + recerenciaCompleta + " - Folio " + folioText + " - Gpo " + grupoText + " - Int" + integranteText;
                 diarioObj.setValue({
                     fieldId: "memo",
-                    value: "identificacion de la cobranza Recibida de la referencia  " + recerenciaCompleta + " " + grupoText + "-" + integranteText
+                    value: memoText
                 });
                 diarioObj.setValue({
                     fieldId: "custbody_tipo_transaccion_conauto",
@@ -2136,10 +2198,10 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                     details: importe
                 })
                 addLineJournal(diarioObj, cuentaCobranza, true, importe.toFixed(2), {
-                    memo: "identificacion de la cobranza Recibida de la referencia  " + recerenciaCompleta + " " + grupoText + "-" + integranteText,
+                    memo: memoText,
                     custcol_referencia_conauto: recerenciaCompleta,
                     custcol_metodo_pago_conauto: formaPago,
-                    custcol_folio_texto_conauto: folioText,
+                    custcol_folio_texto_conauto: folioColumnText,
                     cseg_folio_conauto: folioId,
                     cseg_grupo_conauto: grupoId,
                     entity: cliente,
@@ -2180,10 +2242,10 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                         ;
                         let importeGastoConIVA = montosReparto["gastos"];
                         addLineJournal(diarioObj, CuentaConcepto, false, (importeGastoConIVA).toFixed(2), {
-                            memo: "identificacion de la cobranza Recibida de la referencia  " + recerenciaCompleta + " " + grupoText + "-" + integranteText,
+                            memo: memoText,
                             custcol_referencia_conauto: recerenciaCompleta,
                             custcol_metodo_pago_conauto: formaPago,
-                            custcol_folio_texto_conauto: folioText,
+                            custcol_folio_texto_conauto: folioColumnText,
                             cseg_folio_conauto: folioId,
                             cseg_grupo_conauto: grupoId,
                             class: classId,
@@ -2193,10 +2255,10 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                     } else {
                         log.audit("PAGO", { "Concepto": concepto, "Monto": importeConcepto })
                         addLineJournal(diarioObj, CuentaConcepto, false, importeConcepto, {
-                            memo: "identificacion de la cobranza Recibida de la referencia  " + recerenciaCompleta + " " + grupoText + "-" + integranteText,
+                            memo: memoText,
                             custcol_referencia_conauto: recerenciaCompleta,
                             custcol_metodo_pago_conauto: formaPago,
-                            custcol_folio_texto_conauto: folioText,
+                            custcol_folio_texto_conauto: folioColumnText,
                             cseg_folio_conauto: folioId,
                             cseg_grupo_conauto: grupoId,
                             class: classId,
@@ -2226,7 +2288,10 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                 })
                 let folioText = pagoObj.getValue({
                     fieldId: "custrecord_imr_pa_folio_texto",
-                })
+                });
+                let folioColumnText = pagoObj.getText({
+                    fieldId: "custrecord_imr_pa_folio_texto"
+                });
                 let folioId = pagoObj.getValue({
                     fieldId: "custrecord_imr_pa_folio",
                 });
@@ -2282,21 +2347,22 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                     fieldId: "custbody_tipo_transaccion_conauto",
                     value: 5
                 });
+                let memoPagoIden = "Pago identificado de la referencia " + recerenciaCompleta + " - Folio " + folioText + " - Gpo " + grupoText + " - Int " + integranteText
                 addLineJournal(diarioObj, cuentaCobranza, true, importe.toFixed(2), {
-                    memo: "Pago identificado de la referencia " + recerenciaCompleta + " " + grupoText + "-" + integranteText,
+                    memo: memoPagoIden,
                     custcol_referencia_conauto: recerenciaCompleta,
                     custcol_metodo_pago_conauto: formaPago,
-                    custcol_folio_texto_conauto: folioText,
+                    custcol_folio_texto_conauto: folioColumnText,
                     cseg_folio_conauto: folioId,
                     cseg_grupo_conauto: grupoId,
                     entity: cliente,
                     location: 6
                 });
                 addLineJournal(diarioObj, cuentaLiquidar, false, importe.toFixed(2), {
-                    memo: "Pago identificado de la referencia " + recerenciaCompleta + " " + grupoText + "-" + integranteText,
+                    memo: memoPagoIden,
                     custcol_referencia_conauto: recerenciaCompleta,
                     custcol_metodo_pago_conauto: formaPago,
-                    custcol_folio_texto_conauto: folioText,
+                    custcol_folio_texto_conauto: folioColumnText,
                     cseg_folio_conauto: folioId,
                     cseg_grupo_conauto: grupoId,
                     entity: cliente,
@@ -2322,6 +2388,9 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                 let folioTexto = pagoObj.getValue({
                     fieldId: "custrecord_imr_pa_folio_texto",
                 }) || '';
+                let folioColumnText = pagoObj.getText({
+                    fieldId: "custrecord_imr_pa_folio_texto"
+                });
                 let date = pagoObj.getValue({
                     fieldId: "custrecord_imr_pa_fecha",
                 });
@@ -2351,9 +2420,10 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                     fieldId: "currency",
                     value: 1
                 });
+                let memoText = "Pago no identificado de la referencia " + recerenciaCompleta + " - Folio " + folioColumnText
                 diarioObj.setValue({
                     fieldId: "memo",
-                    value: "Pago no identificado de la referencia " + recerenciaCompleta
+                    value: memoText
                 });
                 diarioObj.setValue({
                     fieldId: "custbody_tipo_transaccion_conauto",
@@ -2367,17 +2437,17 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                     reference: recerencia
                 });
                 addLineJournal(diarioObj, cuentaCobranza, true, importe.toFixed(2), {
-                    memo: "Pago no identificado de la referencia " + recerenciaCompleta,
+                    memo: memoText,
                     custcol_referencia_conauto: recerenciaCompleta,
                     custcol_metodo_pago_conauto: formaPago,
-                    custcol_folio_texto_conauto: folioTexto,
+                    custcol_folio_texto_conauto: folioColumnText,
                     location: 6
                 });
                 addLineJournal(diarioObj, cuentaNoIden, false, importe.toFixed(2), {
-                    memo: "Pago no identificado de la referencia " + recerenciaCompleta,
+                    memo: memoText,
                     custcol_referencia_conauto: recerenciaCompleta,
                     custcol_metodo_pago_conauto: formaPago,
-                    custcol_folio_texto_conauto: folioTexto,
+                    custcol_folio_texto_conauto: folioColumnText,
                     location: 6
                 })
                 let diarioId = diarioObj.save({

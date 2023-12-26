@@ -176,8 +176,8 @@ define(["N/record", "IMR/IMRSearch", "/SuiteScripts/Conauto_Preferences.js"],
             var subsidiary = preferencias.getPreference({
                 key: "SUBCONAUTO"
             });
-            var notaPenalizacion = "REGISTRO DE LA PENALIZACIÓN POR " + tipoTexto + " DEL CONTRATO : " + folioTexto + " " + " GRUPO: " + grupoTexto + " Int: " + integranteFolio;
-            var notaPago = "PROVISION BAJA POR " + tipoTexto + " DEL CONTRATO : " + folioTexto + " " + " GRUPO: " + grupoTexto + " Int: " + integranteFolio;
+            var notaPenalizacion = "REGISTRO DE LA PENALIZACIÓN POR " + tipoTexto + " DEL FOLIO " + folioTexto + " - " + " Gpo " + grupoTexto + " - Int " + integranteFolio;
+            var notaPago = "PROVISION BAJA POR " + tipoTexto + " DEL FOLIO " + folioTexto + " - " + " Gpo " + grupoTexto + " - Int " + integranteFolio;
             var dataUpdate = {};
             if (importePenalizacion) {
                 var diarioPenalizacionObj = record.create({

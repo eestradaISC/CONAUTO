@@ -57,6 +57,7 @@ define([
                     'ModificacionBajas': modificacionBajas,
                     'ComplementoBajas': complementoBajas,
                     'AplicacionCobranza': aplicacionCobranza,
+                    'CobranzaIdentificada': cobranzaIdentificada,
                     'ProvisionCartera': provisionCartera,
                     'CambiarEstatus': cambiarEstatus,
                     'ReclasificacionPrimeraCuota': reclasificacionPrimeraCuota,
@@ -593,7 +594,7 @@ define([
             }
             let preferences = conautoPreferences.get();
             let folios = [];
-            let mandatoryFields = ["referencia", "fechaCobranza", "fechaPago", "folio", "status", "monto", "aportacion", "total_pagar", "formaPago", "numPago", "id"];
+            let mandatoryFields = ["referencia", "fechaCobranza", "fechaPago", "folio", "monto", "aportacion", "total_pagar", "formaPago", "numPago", "id"];
 
             let d = new Date();
             let paymentTime = d.getTime();
@@ -673,9 +674,11 @@ define([
 
                 let payment = payments[i];
                 for (let currencyField of currencyFields) {
+                    log.error("MONTO", payment[currencyField])
                     total += payment[currencyField]
                 }
-                if (payment["total_pagar"] != total) {
+
+                if (payment["total_pagar"].toFixed(2) != total.toFixed(2)) {
                     response.code = 303;
                     response.info.push(`La suma de los montos no coinciden con el total a pagar |TOTAL A PAGAR: ${payment["total_pagar"]} - SUMA DE MONTOS: ${total}|`);
                     return;
@@ -819,6 +822,76 @@ define([
             }
         }
 
+        /**
+         *
+         * @param {Object} data
+         * @param {String} data.tipo  tipo de request
+         * @param {Object[]} data.pagos  arreglo de pagos
+         * @param {String} data.pagos[].referencia  referencia del pago
+         * @param {String} data.pagos[].fecha  fecha del pago formato DD/MM/YYYY
+         * @param {String} data.pagos[].folio  folio conauto
+         * @param {Number} data.pagos[].monto  importe del pago
+         * @param {String} data.pagos[].metodo  forma de pago
+         * @param {String} data.pagos[].id  del pago
+         * @param {Object} response
+         * @param {Number} response.code
+         * @param {Array} response.info
+        */
+        function cobranzaIdentificada(data, response) {
+            let logId = null;
+            logId = createLog(data, response);
+            response.logId = logId;
+
+            var payments = data.pagos || [];
+            if (payments.length == 0) {
+                response.code = 303;
+                response.info.push("No se encontraron pagos a regitrar en la petición");
+                return;
+            }
+            var preferences = conautoPreferences.get();
+            var folios = [];
+            var pagosId = [];
+            var pagosString = [];
+            var mandatoryFields = ["referenciaCompleta", "fechaCobranza", "fechaPago", "folioCorrecto", "folioIncorrecto", "monto", "aportacion", "gastos", "iva", "seguro_auto", "seguro_vida"];
+            var d = new Date();
+            var paymentTime = d.getTime();
+            log.debug("PaymentTime", paymentTime)
+            for (var i = 0; i < payments.length; i++) {
+                var payment = payments[i];
+                payment.id = [getDateExternalid(payment.fechaPago), payment.referencia, payment.numeroRecibo, parseFloat(payment.monto).toFixed(2), paymentTime, i].join("_");
+                payment.idString = [getDateExternalid(payment.fechaPago), payment.referencia, payment.numeroRecibo, parseFloat(payment.monto).toFixed(2)].join("_");
+                log.debug("Pago", payment.id)
+                checkMandatoryFields(payment, mandatoryFields, response, i + 1);
+                checkMandatoryFieldsDate(payment, ["fechaCobranza", "fechaPago"], response, i + 1);
+                if (payment.folio) {
+                    folios.push(payment.folio + "");
+                }
+                if (payment.id) {
+                    pagosId.push(payment.id + "");
+                }
+                if (payment.idString) {
+                    pagosString.push(payment.idString + "");
+                }
+            }
+            if (response.code == 300) {
+                for (var i = 0; i < payments.length; i++) {
+                    var payment = payments[i];
+
+                    if (payment.referencia) {
+                        var account = preferences.getPreference({
+                            key: "CB1P",
+                            reference: (payment.referencia || '').substring(0, 2)
+                        });
+                        if (!account) {
+                            response.code = 305;
+                            response.info.push("Linea " + (i + 1) + ": Referencia \"" + (payment.referencia || '').substring(0, 2) + "\" no valida");
+                        }
+                    }
+                }
+            }
+        }
+
+
         function createLog(data, response) {
             let logId = null;
             try {
@@ -940,6 +1013,107 @@ define([
             }
 
             return estado;
+        }
+
+        function searchRecordNetsuite(type, ids, field, operator, filters) {
+            var idsNetsuite = [];
+            var result = {
+                differences: false,
+                ids: []
+            }
+            filters = filters || [];
+            filters.push(search.createFilter({
+                name: field,
+                operator: operator ? operator : search.main().Operator.ANYOF,
+                values: ids
+            }));
+            search.searchAllRecords({
+                type: type,
+                filters: filters,
+                columns: [
+                    search.createColumn({
+                        name: field
+                    })
+                ],
+                data: idsNetsuite,
+                callback: function (result, idsNetsuite) {
+                    var id = result.getValue({
+                        name: field
+                    });
+                    idsNetsuite.push(id + "");
+                }
+            });
+            log.error({
+                title: "idsNetsuite " + type,
+                details: JSON.stringify(idsNetsuite)
+            })
+            log.error({
+                title: "ids " + type,
+                details: JSON.stringify(ids)
+            })
+            if (idsNetsuite.length != ids.length) {
+                for (var i = 0; i < ids.length; i++) {
+                    var id = ids[i];
+                    log.error({
+                        title: "idsNetsuite.indexOf(id)",
+                        details: idsNetsuite.indexOf(id)
+                    })
+                    if (idsNetsuite.indexOf(id) == -1) {
+                        result.differences = true;
+                        result.ids.push(id);
+                    }
+                }
+            }
+            log.error({
+                title: "",
+                details: JSON.stringify(result)
+            })
+            return result;
+        }
+
+        function pagosSearch(externalId) {
+            var idsNetsuite = [];
+            var result = {
+                differences: false,
+                ids: []
+            }
+            var customrecord_imr_pagos_amortizacionSearchObj = search.create({
+                type: "customrecord_imr_pagos_amortizacion",
+                filters:
+                    [
+                        ["externalidstring", "contains", externalId]
+                    ],
+                columns:
+                    [
+                        search.createColumn({ name: "internalid", label: "ID" }),
+
+                    ]
+            });
+            var searchResultCount = customrecord_imr_pagos_amortizacionSearchObj.runPaged().count;
+            log.debug("customrecord_imr_pagos_amortizacionSearchObj result count", searchResultCount);
+            if (searchResultCount > 0) {
+                customrecord_imr_pagos_amortizacionSearchObj.run().each(function (result) {
+                    var id = result.getValue({ name: 'internalid' });
+                    idsNetsuite.push(id + "");
+                    return true;
+                });
+
+            }
+            if (idsNetsuite.length > 1) {
+                for (var i = 0; i < idsNetsuite.length; i++) {
+                    var id = externalId;
+                    log.error({
+                        title: "idsNetsuite.indexOf(id)",
+                        details: idsNetsuite.indexOf(id)
+                    })
+                    if (idsNetsuite.indexOf(id) == -1) {
+                        result.differences = true;
+                        result.ids.push(id);
+                    }
+                }
+            }
+            return result;
+
         }
 
         function recordFind(recordType, operator, field, value) {

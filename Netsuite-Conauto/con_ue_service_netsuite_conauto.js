@@ -200,6 +200,16 @@ define([
                             });
                             taskServicePAUN.submit();
                             break;
+                        case 'CobranzaIdentificada':
+                            let taskServiceCIDEN = task.create({
+                                taskType: task.TaskType.SCHEDULED_SCRIPT,
+                                scriptId: 'customscript_con_sc_service_ns_conauto',
+                                params: {
+                                    custscript_log_service_id: logId
+                                }
+                            });
+                            taskServiceCIDEN.submit();
+                            break;
 
                     }
                 } catch (e) {

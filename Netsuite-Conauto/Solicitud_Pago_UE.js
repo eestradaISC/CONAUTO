@@ -153,15 +153,17 @@ define(["N/record", "IMR/IMRSearch", "/SuiteScripts/Conauto_Preferences.js", "N/
                 };
                 var callback = callbacks[type];
                 if (callback && !transaccion) {
-                    var transaccion = callback(recordObj);
-                    if (transaccion) {
-                        record.submitFields({
-                            type: context.newRecord.type,
-                            id: context.newRecord.id,
-                            values: {
-                                custrecord_imr_solpa_transaccion: transaccion
-                            }
-                        })
+                    if (callback != "3") {
+                        var transaccion = callback(recordObj);
+                        if (transaccion) {
+                            record.submitFields({
+                                type: context.newRecord.type,
+                                id: context.newRecord.id,
+                                values: {
+                                    custrecord_imr_solpa_transaccion: transaccion
+                                }
+                            })
+                        }
                     }
                 }
             }
@@ -219,9 +221,11 @@ define(["N/record", "IMR/IMRSearch", "/SuiteScripts/Conauto_Preferences.js", "N/
                 fieldId: "custbody_imr_tippolcon",
                 value: 1
             });
+
+            var memoText = "PROVISION DEVOLUCION DE SALDO A FAVOR DEL CLIENTE Folio" + folioTexto + " - GPO " + getGrpIntegrante(recordObj) + " POR SINIESTRO DE VIDA";
             diarioObj.setValue({
                 fieldId: "memo",
-                value: "PROVISION DEVOLUCION DE SALDO A FAVOR DEL CLIENTE GPO: " + getGrpIntegrante(recordObj) + " POR SINIESTRO DE VIDA"
+                value: memoText
             });
             diarioObj.setValue({
                 fieldId: "currency",
@@ -237,17 +241,19 @@ define(["N/record", "IMR/IMRSearch", "/SuiteScripts/Conauto_Preferences.js", "N/
             });
             addLineJournal(diarioObj, cuentaDebito, true, importe.toFixed(2), {
                 entity: clienteId,
-                memo: "PROVISION DEVOLUCION DE SALDO A FAVOR DEL CLIENTE GPO: " + getGrpIntegrante(recordObj) + " POR SINIESTRO DE VIDA",
+                memo: memoText,
                 cseg_folio_conauto: folio,
                 cseg_grupo_conauto: grupo,
-                location: 6
+                location: 6,
+                custcol_folio_texto_conauto: folioColumnText
             });
             addLineJournal(diarioObj, cuentaCredito, false, importe.toFixed(2), {
                 entity: clienteId,
-                memo: "PROVISION DEVOLUCION DE SALDO A FAVOR DEL CLIENTE GPO: " + getGrpIntegrante(recordObj) + " POR SINIESTRO DE VIDA",
+                memo: memoText,
                 cseg_folio_conauto: folio,
                 cseg_grupo_conauto: grupo,
-                location: 6
+                location: 6,
+                custcol_folio_texto_conauto: folioColumnText
             });
             var diarioId = diarioObj.save({
                 ignoreMandatoryFields: true
@@ -307,9 +313,10 @@ define(["N/record", "IMR/IMRSearch", "/SuiteScripts/Conauto_Preferences.js", "N/
                 fieldId: "custbody_imr_tippolcon",
                 value: 1
             });
+            var memoText = "DEVOLUCION DE SALDO A FAVOR DEL CLIENTE FOLIO " + folioTexto + " - GPO " + getGrpIntegrante(recordObj) + " POR SINIESTRO DE AUTO"
             diarioObj.setValue({
                 fieldId: "memo",
-                value: "DEVOLUCION DE SALDO A FAVOR DEL CLIENTE GPO: " + getGrpIntegrante(recordObj) + " POR SINIESTRO DE AUTO"
+                value: memoText
             });
             diarioObj.setValue({
                 fieldId: "currency",
@@ -325,17 +332,19 @@ define(["N/record", "IMR/IMRSearch", "/SuiteScripts/Conauto_Preferences.js", "N/
             });
             addLineJournal(diarioObj, cuentaDebito, true, importe.toFixed(2), {
                 entity: clienteId,
-                memo: "DEVOLUCION DE SALDO A FAVOR DEL CLIENTE GPO: " + getGrpIntegrante(recordObj) + " POR SINIESTRO DE AUTO",
+                memo: memoText,
                 cseg_folio_conauto: folio,
                 cseg_grupo_conauto: grupo,
-                location: 6
+                location: 6,
+                custcol_folio_texto_conauto: folioTexto
             });
             addLineJournal(diarioObj, cuentaCredito, false, importe.toFixed(2), {
                 entity: clienteId,
-                memo: "DEVOLUCION DE SALDO A FAVOR DEL CLIENTE GPO: " + getGrpIntegrante(recordObj) + " POR SINIESTRO DE AUTO",
+                memo: memoText,
                 cseg_folio_conauto: folio,
                 cseg_grupo_conauto: grupo,
-                location: 6
+                location: 6,
+                custcol_folio_texto_conauto: folioTexto
             });
             var diarioId = diarioObj.save({
                 ignoreMandatoryFields: true
@@ -570,6 +579,10 @@ define(["N/record", "IMR/IMRSearch", "/SuiteScripts/Conauto_Preferences.js", "N/
                 value: nota
             });
             facturaObj.setValue({
+                fieldId: "approvalstatus",
+                value: 2
+            });
+            facturaObj.setValue({
                 fieldId: "account",
                 value: cuentaPorPagar
             });
@@ -671,7 +684,7 @@ define(["N/record", "IMR/IMRSearch", "/SuiteScripts/Conauto_Preferences.js", "N/
                 custentity_imr_rfc_operacion: rfc,
                 custentity_imr_llave_integracion: [rfc, nombre].join("_")
             });
-            var nota = "REEMBOLSO POR CANCELACION DE CONTRATO " + folioText + " GPO- " + getGrpIntegrante(recordObj);
+            var nota = "REEMBOLSO POR CANCELACION DE CONTRATO FOLIO " + folioText + " - GPO " + getGrpIntegrante(recordObj);
             var diarioObj = record.create({
                 type: record.Type.JOURNAL_ENTRY,
                 isDynamic: true
@@ -722,6 +735,9 @@ define(["N/record", "IMR/IMRSearch", "/SuiteScripts/Conauto_Preferences.js", "N/
             var folio = recordObj.getValue({
                 fieldId: "custrecord_imr_solpa_folio"
             });
+            var folioText = recordObj.getText({
+                fieldId: "custrecord_imr_solpa_folio"
+            })
             var grupo = recordObj.getValue({
                 fieldId: "custrecord_imr_solpa_grupo"
             });
@@ -751,7 +767,7 @@ define(["N/record", "IMR/IMRSearch", "/SuiteScripts/Conauto_Preferences.js", "N/
                 vatregnumber: rfc,
                 custentity_imr_llave_integracion: [rfc, nombre].join("_")
             });
-            var nota = "REEMBOLSO POR RESCICION DE CONTRATO \"GPO\" CLIENTE " + getGrpIntegrante(recordObj);
+            var nota = "REEMBOLSO POR RESCICION DE CONTRATO FOLIO " + folioText + " - GPO " + getGrpIntegrante(recordObj);
             var diarioObj = record.create({
                 type: record.Type.JOURNAL_ENTRY,
                 isDynamic: true
@@ -802,6 +818,9 @@ define(["N/record", "IMR/IMRSearch", "/SuiteScripts/Conauto_Preferences.js", "N/
             var folio = recordObj.getValue({
                 fieldId: "custrecord_imr_solpa_folio"
             });
+            var folioText = recordObj.getText({
+                fieldId: "custrecord_imr_solpa_folio"
+            })
             var estado = recordObj.getValue({
                 fieldId: "custrecord_imr_solpa_estado_folio"
             });
@@ -860,7 +879,7 @@ define(["N/record", "IMR/IMRSearch", "/SuiteScripts/Conauto_Preferences.js", "N/
                 custentity_imr_rfc_operacion: rfc,
                 custentity_imr_llave_integracion: [rfc, nombre].join("_")
             });
-            var nota = "Devolución Saldo a Favor GPO-" + getGrpIntegrante(recordObj);
+            var nota = "Devolución Saldo a Favor Folio " + folioText + " - Gpo" + getGrpIntegrante(recordObj);
             var diarioObj = record.create({
                 type: record.Type.JOURNAL_ENTRY,
                 isDynamic: true
@@ -909,10 +928,16 @@ define(["N/record", "IMR/IMRSearch", "/SuiteScripts/Conauto_Preferences.js", "N/
                 fieldId: "custrecord_imr_solpa_rfc_ben"
             });
             var referencia = recordObj.getValue({
-                fieldId: "custrecord_imr_solpa_ref_bancaria"
+                fieldId: "custrecord_imr_referenciacon"
             });
             var folio = recordObj.getValue({
                 fieldId: "custrecord_imr_solpa_folio"
+            });
+            var folioText = recordObj.getText({
+                fieldId: "custrecord_imr_solpa_folio"
+            });
+            var folioColumnText = recordObj.getText({
+                fieldId: "custrecord_imr_solpa_folio_texto"
             });
             var grupo = recordObj.getValue({
                 fieldId: "custrecord_imr_solpa_grupo"
@@ -947,7 +972,7 @@ define(["N/record", "IMR/IMRSearch", "/SuiteScripts/Conauto_Preferences.js", "N/
             var mes = rellenarDatoFecha(fecha.getMonth() + 1);
             var año = rellenarDatoFecha(fecha.getFullYear());
             var folioNota = [referencia, dia, mes, año];
-            var nota = "Devolución De 1ra cuota de la cobranza recibida de la referencia " + referencia;
+            var nota = "Devolución De 1ra cuota de la cobranza recibida de la referencia " + referencia + " - Folio " + folioText;
             var diarioObj = record.create({
                 type: record.Type.JOURNAL_ENTRY,
                 isDynamic: true
@@ -977,14 +1002,16 @@ define(["N/record", "IMR/IMRSearch", "/SuiteScripts/Conauto_Preferences.js", "N/
                 memo: nota,
                 cseg_folio_conauto: folio,
                 cseg_grupo_conauto: grupo,
-                location: 6
+                location: 6,
+                custcol_folio_texto_conauto: folioColumnText
             });
             addLineJournal(diarioObj, cuentaCredito, false, importe.toFixed(2), {
                 entity: clienteId,
                 memo: nota,
                 cseg_folio_conauto: folio,
                 cseg_grupo_conauto: grupo,
-                location: 6
+                location: 6,
+                custcol_folio_texto_conauto: folioColumnText
             });
 
             const idJournal = diarioObj.save({ ignoreMandatoryFields: true });
@@ -999,7 +1026,7 @@ define(["N/record", "IMR/IMRSearch", "/SuiteScripts/Conauto_Preferences.js", "N/
             var grupo = recordObj.getText({
                 fieldId: "custrecord_imr_solpa_grupo"
             });
-            return grupo + "  Int-" + integrante
+            return grupo + " - Int " + integrante
         }
 
         function rellenarDatoFecha(value) {
