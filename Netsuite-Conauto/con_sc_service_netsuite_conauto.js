@@ -1802,6 +1802,16 @@ define([
                                         },
                                         {
                                                 type: "number",
+                                                field: "saldo_favor",
+                                                fieldRecord: "custrecord_conauto_saldo_fav"
+                                        },
+                                        {
+                                                type: "number",
+                                                field: "saldo_liq",
+                                                fieldRecord: "custrecord_conauto_saldo_liq"
+                                        },
+                                        {
+                                                type: "number",
                                                 field: "seguro_auto",
                                                 fieldRecord: "custrecord_conauto_seguro_auto"
                                         },

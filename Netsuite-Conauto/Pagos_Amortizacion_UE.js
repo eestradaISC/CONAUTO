@@ -86,6 +86,9 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                 let grupoLiquidado = newRecord.getValue({
                     fieldId: "custrecord_imr_pa_grupo_liquidado"
                 });
+                let saldoLiquidado = newRecord.getValue({
+                    fieldId: "custrecord_conauto_saldo_liq"
+                });
                 let amortizacionId = newRecord.getValue({
                     fieldId: "custrecord_imr_pa_amortizacion"
                 });
@@ -98,6 +101,12 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                     newRecord.setValue({
                         fieldId: "custrecord_imr_pa_folio",
                         value: folioId
+                    });
+                }
+                if (!grupoLiquidado && saldoLiquidado) {
+                    newRecord.setValue({
+                        fieldId: "custrecord_imr_pa_grupo_liquidado",
+                        value: true
                     });
                 }
                 if (folioId && !amortizacionId) {
@@ -217,9 +226,9 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                     "aportacion": parseFloat(newRecord.getValue({
                         fieldId: "custrecord_conauto_aportacion"
                     })),
-                    "saldoFavor": 0 /*|| parseFloat((newRecord.getValue({
-                        fieldId: "custrecord_conauto_iva"
-                    })))*/
+                    "saldoFavor": parseFloat(newRecord.getValue({
+                        fieldId: "custrecord_conauto_saldo_fav"
+                    }))
                 }
 
                 if (pagoVirtual) {
@@ -241,7 +250,9 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                         if (folioId) {
                             if (!aplicado && importe && !diarioIden) {
                                 let preferences = conautoPreferences.get();
+                                log.error("Uno antes del grupo liquidado")
                                 if (grupoLiquidado) {
+                                    log.error("Entramos al grupo liquidado")
                                     let diarioId = crearDiarioLiquidacion(preferences, diarioNoIden, recerenciaCompleta, newRecord);
                                     newRecord.setValue({
                                         fieldId: "custrecord_imr_pa_diario",
@@ -2210,7 +2221,6 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                 for (let concepto in montosReparto) {
                     let importeConcepto = montosReparto[concepto] || 0;
                     if (importeConcepto == 0) {
-                        log.audit("Entreees")
                         continue;
                     }
                     let CuentaConcepto = preferences.getPreference({
@@ -2281,11 +2291,14 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
             try {
                 let cuentaCobranza = null;
                 let importe = parseFloat(pagoObj.getValue({
-                    fieldId: "custrecord_imr_pa_importe",
+                    fieldId: "custrecord_conauto_saldo_liq",
                 })) || 0;
                 let formaPago = pagoObj.getValue({
                     fieldId: "custrecord_imr_pa_forma_pago",
-                })
+                });
+                let recerencia = pagoObj.getValue({
+                    fieldId: "custrecord_imr_pa_referencia",
+                }) || '';
                 let folioText = pagoObj.getValue({
                     fieldId: "custrecord_imr_pa_folio_texto",
                 });
@@ -2339,15 +2352,16 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                     fieldId: "currency",
                     value: 1
                 });
-                diarioObj.setValue({
-                    fieldId: "memo",
-                    value: "Pago identificado"
-                });
+
                 diarioObj.setValue({
                     fieldId: "custbody_tipo_transaccion_conauto",
                     value: 5
                 });
-                let memoPagoIden = "Pago identificado de la referencia " + recerenciaCompleta + " - Folio " + folioText + " - Gpo " + grupoText + " - Int " + integranteText
+                let memoPagoIden = "Pago identificado de la referencia " + recerenciaCompleta + " - Folio " + folioText + " - Gpo " + grupoText + " - Int " + integranteText;
+                diarioObj.setValue({
+                    fieldId: "memo",
+                    value: memoPagoIden
+                });
                 addLineJournal(diarioObj, cuentaCobranza, true, importe.toFixed(2), {
                     memo: memoPagoIden,
                     custcol_referencia_conauto: recerenciaCompleta,
