@@ -95,7 +95,6 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                 let formaPago = newRecord.getValue({
                     fieldId: "custrecord_imr_pa_forma_pago"
                 }); //L.R.M.R 01/10/2021
-                log.error('ERROR', 'Forma de pago: ' + formaPago);
                 if (!folioId && folioText) {
                     folioId = recordFind("customrecord_cseg_folio_conauto", 'anyof', "externalid", folioText);
                     newRecord.setValue({
@@ -250,9 +249,8 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                         if (folioId) {
                             if (!aplicado && importe && !diarioIden) {
                                 let preferences = conautoPreferences.get();
-                                log.error("Uno antes del grupo liquidado")
                                 if (grupoLiquidado) {
-                                    log.error("Entramos al grupo liquidado")
+                                    log.audit("Entramos al grupo liquidado")
                                     let diarioId = crearDiarioLiquidacion(preferences, diarioNoIden, recerenciaCompleta, newRecord);
                                     newRecord.setValue({
                                         fieldId: "custrecord_imr_pa_diario",
@@ -530,7 +528,7 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
 
         function createJournalCartera(idPago, preferences, montosReparto) {
             try {
-                log.error("createJournalCartera")
+                log.audit("createJournalCartera")
                 let pagoObj = record.load({
                     id: idPago,
                     type: "customrecord_imr_pagos_amortizacion"
@@ -596,10 +594,7 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                     "aportacion": "4",
                     "saldoFavor": "5",
                 }
-                log.audit({
-                    title: "Datos antes de entrar",
-                    details: `journalCartera: ${journalCartera}    total: ${total}    estadoFolio: ${estadoFolio}`
-                })
+
                 if (!journalCartera && total != 0 && estadoFolio == '4') {
                     let diarioObj = record.create({
                         type: record.Type.JOURNAL_ENTRY,
@@ -693,7 +688,7 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
 
         function createJournalcancelacionDevolucionCartera(idPago, preferences) {
             try {
-                log.error("createJournalcancelacionDevolucionCartera")
+                log.audit("createJournalcancelacionDevolucionCartera")
                 let pagoObj = record.load({
                     id: idPago,
                     type: "customrecord_imr_pagos_amortizacion"
@@ -783,14 +778,7 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                         total += totalLine;
                     }
                 }
-                log.error({
-                    title: "createJournalcancelacionDevolucionCartera",
-                    details: JSON.stringify({
-                        journalCancelacionId: journalCancelacionId,
-                        total: total,
-                        estadoDeCancelacion: estadoDeCancelacion
-                    })
-                })
+
                 if (!journalCancelacionId && total != 0 && estadoDeCancelacion == '4') {
                     let diarioObj = record.create({
                         type: record.Type.JOURNAL_ENTRY,
@@ -882,7 +870,7 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
 
         function createCreditMemo(idPago, preferences) {
             try {
-                log.error("createCreditMemo")
+                log.audit("createCreditMemo")
                 let pagoObj = record.load({
                     id: idPago,
                     type: "customrecord_imr_pagos_amortizacion"
@@ -1058,7 +1046,7 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
 
         function createJournalCancelacionSeguroAuto(idPago, preferences) {
             try {
-                log.error("createJournalCancelacionSeguroAuto")
+                log.audit("createJournalCancelacionSeguroAuto")
                 let pagoObj = record.load({
                     id: idPago,
                     type: "customrecord_imr_pagos_amortizacion"
@@ -1211,7 +1199,7 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
 
         function createJournalCancelacionCXP(idPago, preferences) {
             try {
-                log.error("createJournalCancelacionCXP")
+                log.audit("createJournalCancelacionCXP")
                 let pagoObj = record.load({
                     id: idPago,
                     type: "customrecord_imr_pagos_amortizacion"
@@ -1374,7 +1362,7 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
 
         function crearDiarioIndetificadoReinstalacion(preferences, montosReparto, diarioNoIden, recerencia, date, importe, formaPago, folioText, folioId, grupoId, cliente, recerenciaCompleta, pagoObj) {
             try {
-                log.error("crearDiarioIndetificadoReinstalacion")
+                log.audit("crearDiarioIndetificadoReinstalacion")
                 let cuentaCobranza = null;
                 let folioObj = record.load({
                     type: "customrecord_cseg_folio_conauto",
@@ -1510,7 +1498,7 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
 
         function createJournalCXP(idPago, preferences) {
             try {
-                log.error("createJournalCXP")
+                log.audit("createJournalCXP")
                 let pagoObj = record.load({
                     id: idPago,
                     type: "customrecord_imr_pagos_amortizacion"
@@ -1659,7 +1647,7 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
 
         function createJournalSeguroAuto(idPago, preferences) {
             try {
-                log.error("createJournalSeguroAuto")
+                log.audit("createJournalSeguroAuto")
                 let pagoObj = record.load({
                     id: idPago,
                     type: "customrecord_imr_pagos_amortizacion"
@@ -1807,7 +1795,7 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
 
         function createInvoice(idPago, preferences) {
             try {
-                log.error("createInvoice")
+                log.audit("createInvoice")
                 let pagoObj = record.load({
                     id: idPago,
                     type: "customrecord_imr_pagos_amortizacion"
@@ -1936,7 +1924,6 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                         fieldId: "custbody_fe_metodo_de_pago_txt",
                         value: formaPagoFetxt
                     });
-                    log.error('ERROR', 'Metodo de pago: ' + formaPagoFe + ', Text: ' + formaPagoFetxt);
                     facturaObj.selectNewLine({
                         sublistId: "item"
                     })
@@ -1991,7 +1978,7 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                     facturaId = facturaObj.save({
                         ignoreMandatoryFields: true
                     });
-                    log.error('ERROR', 'facturaId: ' + facturaId);
+
                     conautoPreferences.setFolioConauto(facturaId);
 
                     pagoObj.setValue({
@@ -2007,7 +1994,7 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
 
         function crearDiarioCancelacionPago(idPago) {
             try {
-                log.error("crearDiarioCancelacionPago")
+                log.audit("crearDiarioCancelacionPago")
                 let pagoObj = record.load({
                     id: idPago,
                     type: "customrecord_imr_pagos_amortizacion"
@@ -2147,6 +2134,7 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
 
         function crearDiarioIndetificado(preferences, montosReparto, diarioNoIden, recerencia, date, importe, formaPago, folioText, folioId, grupoId, cliente, recerenciaCompleta, newRecord, integranteText, grupoText, pagoObj) {
             try {
+                log.audit("crearDiarioIndetificado")
                 let cuentaCobranza = null;
                 if (diarioNoIden) {
                     cuentaCobranza = preferences.getPreference({
@@ -2204,10 +2192,7 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                     value: 5
                 });
                 diarioObj.setValue({ fieldId: "custbody_imr_ref_pagoamortizaciones", value: newRecord.id });
-                log.error({
-                    title: "importe",
-                    details: importe
-                })
+
                 addLineJournal(diarioObj, cuentaCobranza, true, importe.toFixed(2), {
                     memo: memoText,
                     custcol_referencia_conauto: recerenciaCompleta,
@@ -2263,7 +2248,6 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                             location: 6
                         });
                     } else {
-                        log.audit("PAGO", { "Concepto": concepto, "Monto": importeConcepto })
                         addLineJournal(diarioObj, CuentaConcepto, false, importeConcepto, {
                             memo: memoText,
                             custcol_referencia_conauto: recerenciaCompleta,
@@ -2289,6 +2273,7 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
 
         function crearDiarioLiquidacion(preferences, diarioNoIden, recerenciaCompleta, pagoObj) {
             try {
+                log.audit("crearDiarioLiquidacion")
                 let cuentaCobranza = null;
                 let importe = parseFloat(pagoObj.getValue({
                     fieldId: "custrecord_conauto_saldo_liq",
@@ -2393,6 +2378,7 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
 
         function crearDiarioNoIden(pagoObj) {
             try {
+                log.audit("crearDiarioNoIden");
                 let importe = parseFloat(pagoObj.getValue({
                     fieldId: "custrecord_imr_pa_importe",
                 })) || 0;
