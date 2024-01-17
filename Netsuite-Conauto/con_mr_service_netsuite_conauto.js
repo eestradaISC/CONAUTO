@@ -3,7 +3,7 @@
  * @NScriptType MapReduceScript
  * @NAmdConfig /SuiteScripts/IMR_Modules_Libs_Config.json
  */
-define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js", "IMR/IMRSearch", "N/error", "/SuiteScripts/NetSuite-Conauto/lib/con_lib_service_netsuite.js"],
+define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js", "IMR/IMRSearch", "N/error", "/SuiteScripts/con_lib_service_netsuite.js"],
     /**
      * @param {record} record
      * @param {runtime} runtime
@@ -12,6 +12,11 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
      * @param {error} error
      */
     (record, file, runtime, conautoPreferences, search, error, lib_conauto) => {
+        const LOG_SERVICE_CONAUTO = "customrecord_log_service_conauto"
+        const RECORDS_PROCESSED = {
+            "processed": 0
+        }
+
         /**
          * Defines the function that is executed at the beginning of the map/reduce process and generates the input data.
          * @param {Object} inputContext
@@ -28,7 +33,7 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
         const getInputData = (inputContext) => {
             let scriptObj = runtime.getCurrentScript();
             let logId = scriptObj.getParameter({
-                name: "custscript_log_service_id"
+                name: "custscript_log_service_id_mr"
             });
             var request = lib_conauto.getRequestLog(logId);
             log.audit("request", JSON.stringify(request));
@@ -53,17 +58,13 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
          */
 
         const map = (mapContext) => {
-            log.audit("map58", JSON.stringify(mapContext));
             var request = JSON.parse(mapContext.value);
             var tipooperacion = request.tipo
             var pagos = request.pagos || request.detalles;
-            log.audit("map62", JSON.stringify(request));
-            log.audit("map63 pagos", JSON.stringify(pagos));
             let scriptObj = runtime.getCurrentScript();
             let logId = scriptObj.getParameter({
-                name: "custscript_log_service_id"
+                name: "custscript_log_service_id_mr"
             });
-            log.audit("logId", JSON.stringify(logId));
 
             for (let keyPago in pagos) {
                 log.audit("map65", JSON.stringify({ key: keyPago, value: { tipo: tipooperacion, pagos: pagos[keyPago], logId: logId } }));
@@ -96,9 +97,13 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
          * @since 2015.2
          */
         const reduce = (reduceContext) => {
+            let scriptObj = runtime.getCurrentScript();
+            let logId = scriptObj.getParameter({
+                name: "custscript_log_service_id_mr"
+            });
+
             log.audit("reduce94", JSON.stringify(reduceContext));
             var key = reduceContext.key;
-            var tipo = reduceContext.values.tipo;
             var request = JSON.parse(reduceContext.values);
             request = request instanceof Array ? request[0] : request;
             log.audit("REQUEST VALID", request);
@@ -118,6 +123,19 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
                     resultados = callback(request) || [];
                     log.audit("reduce142", JSON.stringify(resultados));
                     reduceContext.write({ key: key, value: resultados });
+                    RECORDS_PROCESSED.processed++;
+                    log.audit({
+                        title: "PROCESADOS ACTUALMENTE",
+                        details: RECORDS_PROCESSED.processed
+                    });
+                    record.submitFields({
+                        type: LOG_SERVICE_CONAUTO,
+                        id: Number(logId),
+                        values: {
+                            custrecord_con_payments_processed: Number(RECORDS_PROCESSED.processed)
+                        },
+                    });
+
                 } else {
                     throw error.create({
                         name: "NOT_SUPPORTED_OPERATION",
@@ -156,52 +174,50 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
             log.audit('summarize map', JSON.stringify(summaryContext.reduceSummary));
             let scriptObj = runtime.getCurrentScript();
             let logId = scriptObj.getParameter({
-                name: "custscript_log_service_id"
+                name: "custscript_log_service_id_mr"
             });
             var totalRecordsUpdated = 0;
-            var custrecord_log_reqconauto_record_ids = [];
-            var custrecord_log_reqconauto_error = [];
             var recordType = "";
+            let resultados = {
+                custrecord_log_serv_processed: true,
+                custrecord_log_serv_recordtype: "",
+                custrecord_log_serv_transactions: [],
+                custrecord_log_serv_solpagos: [],
+                custrecord_log_serv_record_ids: [],
+                custrecord_log_serv_folio: [],
+                custrecord_log_serv_error: []
+            }
             summaryContext.output.iterator().each(function (key, value) {
                 log.audit("SUMMARIZE iterator each key:" + key, JSON.stringify(value));
                 value = JSON.parse(value);
                 recordType = value.recordType;
-                if (value.records)
-                    custrecord_log_reqconauto_record_ids = custrecord_log_reqconauto_record_ids.concat(value.records);
-                if (value.errors)
-                    custrecord_log_reqconauto_error = custrecord_log_reqconauto_error.concat(value.errors || []);
+                resultados.custrecord_log_serv_transactions = resultados.custrecord_log_serv_transactions.concat(value.transactions);
+                resultados.custrecord_log_serv_solpagos = resultados.custrecord_log_serv_solpagos.concat(value.solPagos);
+                resultados.custrecord_log_serv_record_ids = resultados.custrecord_log_serv_record_ids.concat(value.records);
+                resultados.custrecord_log_serv_folio = resultados.custrecord_log_serv_folio.concat(value.folios);
+                resultados.custrecord_log_serv_error = resultados.custrecord_log_serv_error.concat(value.errors);
                 totalRecordsUpdated++;
                 return true;
             });
             //TODO: Enviamos actualizacion
             try {
                 record.submitFields({
-                    type: 'customrecord_log_service_conauto',
+                    type: LOG_SERVICE_CONAUTO,
                     id: logId,
-                    values: {
-                            custrecord_log_serv_processed: true,
-                            custrecord_log_serv_recordtype: resultados.recordType,
-                            custrecord_log_serv_transactions: resultados.transactions,
-                            custrecord_log_serv_solpagos: resultados.solPagos,
-                            custrecord_log_serv_record_ids: resultados.records.join(','),
-                            custrecord_log_serv_folio: resultados.folios,
-                            custrecord_log_serv_error: (resultados.errors || []).join('\n')
-                    }
-            });
-
-                log.audit("SUMMARIZE", custrecord_log_reqconauto_record_ids + "  " + custrecord_log_reqconauto_record_ids + " " + custrecord_log_reqconauto_error);
+                    values: resultados
+                });
             } catch (e) {
                 log.error('summarize', e);
                 let fileObj = file.create({
                     name: 'registros' + new Date() + '.txt',
                     fileType: file.Type.PLAINTEXT,
-                    contents: custrecord_log_reqconauto_record_ids.join(","),
+                    contents: "ss",
                     description: 'Log ' + logId,
                     encoding: file.Encoding.UTF_8,
                     folder: 59
                 });
 
-                let fileId = file.save();
+                let fileId = fileObj.save();
 
                 record.attach({
                     record: {
@@ -582,7 +598,8 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
                 transactions: transactions,
                 records: transactions,
                 solPagos: [],
-                folios: foliosId
+                folios: foliosId,
+                errors: errors
             };
         }
 
@@ -606,6 +623,7 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
             let recordType = 'customrecord_imr_solicitud_pago';
             let transactions = [];
             let foliosId = [];
+            let errors = [];
             for (let i = 0; i < data.detalles.length; i++) {
                 let detalle = data.detalles[i];
                 let recordObj = record.create({
@@ -651,7 +669,8 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
                 transactions: [],
                 records: transactions,
                 solPagos: transactions,
-                folios: foliosId
+                folios: foliosId,
+                errors: errors
             };
         }
 

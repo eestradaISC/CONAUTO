@@ -62,20 +62,20 @@ define([
                     switch (logType) {
                         case 'PrimerasCuotas':
                             let taskServicePC = task.create({
-                                taskType: task.TaskType.SCHEDULED_SCRIPT,
-                                scriptId: 'customscript_con_sc_service_ns_conauto',
+                                taskType: task.TaskType.MAP_REDUCE,
+                                scriptId: 'customscript_con_mr_service_ns_conauto',
                                 params: {
-                                    custscript_log_service_id: logId
+                                    custscript_log_service_id_mr: logId
                                 }
                             });
                             taskServicePC.submit();
                             break;
                         case 'SolicitudPago':
                             let taskServicePI = task.create({
-                                taskType: task.TaskType.SCHEDULED_SCRIPT,
-                                scriptId: 'customscript_con_sc_service_ns_conauto',
+                                taskType: task.TaskType.MAP_REDUCE,
+                                scriptId: 'customscript_con_mr_service_ns_conauto',
                                 params: {
-                                    custscript_log_service_id: logId
+                                    custscript_log_service_id_mr: logId
                                 }
                             });
                             taskServicePI.submit();
@@ -142,10 +142,10 @@ define([
                             break;
                         case 'AplicacionCobranza':
                             let taskServiceApC = task.create({
-                                taskType: task.TaskType.SCHEDULED_SCRIPT,
-                                scriptId: 'customscript_con_sc_service_ns_conauto',
+                                taskType: task.TaskType.MAP_REDUCE,
+                                scriptId: 'customscript_con_mr_service_ns_conauto',
                                 params: {
-                                    custscript_log_service_id: logId
+                                    custscript_log_service_id_mr: logId
                                 }
                             });
                             taskServiceApC.submit();
@@ -162,10 +162,10 @@ define([
                             break;
                         case 'ProvisionCartera':
                             let taskServicePCar = task.create({
-                                taskType: task.TaskType.SCHEDULED_SCRIPT,
-                                scriptId: 'customscript_con_sc_service_ns_conauto',
+                                taskType: task.TaskType.MAP_REDUCE,
+                                scriptId: 'customscript_con_mr_service_ns_conauto',
                                 params: {
-                                    custscript_log_service_id: logId
+                                    custscript_log_service_id_mr: logId
                                 }
                             });
                             taskServicePCar.submit();
@@ -202,10 +202,10 @@ define([
                             break;
                         case 'CobranzaIdentificada':
                             let taskServiceCIDEN = task.create({
-                                taskType: task.TaskType.SCHEDULED_SCRIPT,
-                                scriptId: 'customscript_con_sc_service_ns_conauto',
+                                taskType: task.TaskType.MAP_REDUCE,
+                                scriptId: 'customscript_con_mr_service_ns_conauto',
                                 params: {
-                                    custscript_log_service_id: logId
+                                    custscript_log_service_id_mr: logId
                                 }
                             });
                             taskServiceCIDEN.submit();

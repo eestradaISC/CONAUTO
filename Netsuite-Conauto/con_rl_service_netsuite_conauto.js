@@ -931,7 +931,7 @@ define([
                     name: 'REQ_' + dateNow + '.json',
                     contents: JSON.stringify(data),
                     fileType: file.Type.JSON,
-                    folder: 96285
+                    folder: 105850
                 });
                 let requestFileId = requestFile.save();
                 //Respuesta
@@ -939,7 +939,7 @@ define([
                     name: 'RES_' + dateNow + '.json',
                     contents: JSON.stringify(response),
                     fileType: file.Type.JSON,
-                    folder: 96286
+                    folder: 105849
                 });
                 let responseFileId = responseFile.save();
                 if (requestFileId && responseFileId) {
@@ -1118,6 +1118,7 @@ define([
 
         function recordFind(recordType, operator, field, value) {
             let id = null;
+            
             let results = search.searchAllRecords({
                 type: recordType,
                 filters: [

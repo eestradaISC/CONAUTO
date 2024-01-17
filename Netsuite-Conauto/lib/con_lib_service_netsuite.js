@@ -5,16 +5,17 @@
 * @NApiVersion 2.1
 */
 
-define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js", "IMR/IMRSearch", "N/error", 'N/format', "N/log"],
+define(["N/record", "N/file", "/SuiteScripts/Conauto_Preferences.js", "IMR/IMRSearch", "N/search", "N/error", "N/log"],
     /**
      * @param {record} record
      * @param {file} file
      * @param {conautoPreferences} conautoPreferences
      * @param {IMRSearch} search
+     * @param {search} search_netsuite
      * @param {error} error
      * @param {log} log
      */
-    (record, file, conautoPreferences, search, error, log) => {
+    (record, file, conautoPreferences, search, search_netsuite, error, log) => {
         const handler = {};
 
         handler.applyPaymentLine = (recordObj, line) => {
@@ -100,7 +101,7 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
                 let results = search.searchAllRecords({
                     type: recordType,
                     filters: [
-                        search.createFilter({
+                        search_netsuite.createFilter({
                             name: field,
                             operator: operator,
                             values: [value]
@@ -163,7 +164,7 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
             for (let dataField of maps) {
                 if (Object.getOwnPropertyNames(data).indexOf(dataField.field) != -1) {
                     let value = data[dataField.field];
-                    value = getValueFormat(dataField.type, value);
+                    value = handler.getValueFormat(dataField.type, value);
                     record.setValue({
                         fieldId: dataField.fieldRecord,
                         value: value
@@ -309,7 +310,7 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
                         reference: 'gastos'
                     });
 
-                    addLineJournal(diarioObj, cuentaDebito, true, gastos, {
+                    handler.addLineJournal(diarioObj, cuentaDebito, true, gastos, {
                         memo: memo,
                         custcol_referencia_conauto: reference,
                         custcol_metodo_pago_conauto: formaPago,
@@ -320,7 +321,7 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
                         class: classId,
                         location: 6
                     });
-                    addLineJournal(diarioObj, accountCredit, false, gastos, {
+                    handler.addLineJournal(diarioObj, accountCredit, false, gastos, {
                         memo: memo,
                         custcol_referencia_conauto: reference,
                         custcol_metodo_pago_conauto: formaPago,
