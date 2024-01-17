@@ -48,6 +48,7 @@ Scripts utilizados por CONAUTO en NetSuite
     | detalles                     | Array[Object] |
     | detalles.tipoMovimiento      | Number        |
     | detalles.monto               | Number        |
+    | detalles.folio               | String        |
     | detalles.cuentaBancaria      | String        |
     | detalles.referencia          | String        |
     | detalles.beneficiario        | Object        |

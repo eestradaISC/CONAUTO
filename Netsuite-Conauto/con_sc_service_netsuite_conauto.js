@@ -14,7 +14,7 @@ define([
         '/SuiteScripts/Conauto_Preferences.js',
         'IMR/IMRSearch',
         'N/error',
-        "/SuiteScripts/NetSuite-Conauto/lib/con_lib_service_netsuite.js"
+        "/SuiteScripts/con_lib_service_netsuite.js"
 ],
         function (
                 record,
@@ -193,7 +193,8 @@ define([
                                         id: folioId,
                                         isDynamic: true
                                 });
-                                if (recordObj.getValue('custrecord_folio_estado') == 1) {
+
+                                if (recordObj.getValue('custrecord_folio_estado') == 1) { // Es el estado de solicitante
                                         lib_conauto.setOpcionalData(recordObj, 2, 'custrecord_folio_estado'); // 2 Es el estado de Integrante
                                 }
                                 lib_conauto.setOpcionalData(recordObj, data.subestado, 'custrecord_folio_subestatus');
@@ -360,6 +361,12 @@ define([
                                                         value: data.cliente.nombre
                                                 });
                                         }
+                                        customerObj.setValue({
+                                                fieldId: "custentity_publico_geeneral",
+                                                value: false,
+                                                ignoreFieldChange: true
+                                        });
+
                                         let mapsFieldsClient = [
                                                 {
                                                         'field': 'rfc',
