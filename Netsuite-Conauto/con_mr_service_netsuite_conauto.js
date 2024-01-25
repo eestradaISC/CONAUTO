@@ -143,9 +143,9 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
                     });
                 }
 
-            } catch (error) {
-                createLog2(request.logId, data, error, '')
-                handlerError(error);
+            } catch (e) {
+                //createLog2(request.logId, data, e, '')
+                handlerError(e);
             }
             log.audit("reduce55", "end reduce");
         }
@@ -184,8 +184,7 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
                 custrecord_log_serv_transactions: [],
                 custrecord_log_serv_solpagos: [],
                 custrecord_log_serv_record_ids: [],
-                custrecord_log_serv_folio: [],
-                custrecord_log_serv_error: []
+                custrecord_log_serv_folio: []
             }
             summaryContext.output.iterator().each(function (key, value) {
                 log.audit("SUMMARIZE iterator each key:" + key, JSON.stringify(value));
@@ -195,7 +194,9 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
                 resultados.custrecord_log_serv_solpagos = resultados.custrecord_log_serv_solpagos.concat(value.solPagos);
                 resultados.custrecord_log_serv_record_ids = resultados.custrecord_log_serv_record_ids.concat(value.records);
                 resultados.custrecord_log_serv_folio = resultados.custrecord_log_serv_folio.concat(value.folios);
-                resultados.custrecord_log_serv_error = resultados.custrecord_log_serv_error.concat(value.errors);
+                //resultados.custrecord_log_serv_error = resultados.custrecord_log_serv_error.concat(value.errors);
+
+
                 totalRecordsUpdated++;
                 return true;
             });
@@ -624,8 +625,8 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
             let transactions = [];
             let foliosId = [];
             let errors = [];
-            for (let i = 0; i < data.detalles.length; i++) {
-                let detalle = data.detalles[i];
+            for (let i = 0; i < data.pagos.length; i++) {
+                let detalle = data.pagos[i];
                 let recordObj = record.create({
                     type: 'customrecord_imr_solicitud_pago'
                 });
@@ -706,6 +707,7 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
             let transactions = [];
             let folios = [];
             let errors = [];
+            let foliosErroneos = [];
             let recordType = "customrecord_imr_pagos_amortizacion";
 
             let payments = data.pagos || [];
@@ -720,6 +722,50 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
             for (let payment of payments) {
                 line++;
                 lib_conauto.checkMandatoryFields(payment, mandatoryFields, line, errors);
+                //Validación de información en folio
+                if (payment.folio) {
+                    if (payment.aportacion != 0 || payment.gastos != 0 || payment.iva != 0 || payment.seguro_auto != 0 || payment.seguro_vida != 0) {
+                        let dataFolio = {};
+                        search.searchAllRecords({
+                            type: 'customrecord_cseg_folio_conauto',
+                            columns: [
+                                search.createColumn({ name: 'internalid' }),
+                                search.createColumn({ name: 'externalid' }),
+                                search.createColumn({ name: 'name' }),
+                                search.createColumn({ name: 'custrecord_cliente_integrante' }),
+                                search.createColumn({ name: 'custrecord_grupo' }),
+                                search.createColumn({ name: 'custrecord_imr_integrante_conauto' }),
+                                search.createColumn({ name: 'custrecord_folio_estado' })
+                            ],
+                            filters: [
+                                search.createFilter({
+                                    name: 'name',
+                                    operator: search.main().Operator.IS,
+                                    values: payment.folio
+                                })
+                            ],
+                            data: dataFolio,
+                            callback: function (result, dataFolio) {
+                                let id = result.getValue({ name: 'internalid' });
+                                let folio = result.getValue({ name: 'name' });
+                                let cliente = result.getValue({ name: 'custrecord_cliente_integrante' });
+                                let grupo = result.getValue({ name: 'custrecord_grupo' });
+                                let integrante = result.getValue({ name: 'custrecord_imr_integrante_conauto' });
+                                let estadoFolio = result.getValue({ name: 'custrecord_folio_estado' });
+                                dataFolio.folio = id;
+                                dataFolio["numFolio"] = folio
+                                dataFolio.cliente = cliente;
+                                dataFolio.grupo = grupo;
+                                dataFolio.integrante = integrante;
+                                dataFolio.estadoFolio = estadoFolio;
+
+                            }
+                        });
+                        log.debug("dataFolio", dataFolio);
+                        lib_conauto.verificarValoresVacios(dataFolio, errors, foliosErroneos);
+                        log.debug("errors0", foliosErroneos);
+                    }
+                }
             }
             if (errors.length == 0) {
                 let fields = [
@@ -874,6 +920,17 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
                     }
                 }
             } else {
+                let scriptObj = runtime.getCurrentScript();
+                let logId = scriptObj.getParameter({
+                    name: "custscript_log_service_id_mr"
+                });
+                record.submitFields({
+                    type: LOG_SERVICE_CONAUTO,
+                    id: Number(logId),
+                    values: {
+                        "custrecord_log_serv_folios_no_processed": [...new Set(foliosErroneos)]
+                    }
+                });
                 throw error.create({
                     name: "DATA_ERROR_PAYMENTS",
                     message: errors.join("\n")
@@ -1274,6 +1331,33 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
                 folios: folios,
                 errors: errors
             };
+        }
+
+        /**
+         * maneja el error
+         * @param error
+         * @return {{reduce: reduce, getInputData: (function(*): *)}}
+         */
+        function handlerError(e) {
+            let scriptObj = runtime.getCurrentScript();
+            let logId = scriptObj.getParameter({
+                name: "custscript_log_service_id_mr"
+            });
+            if (logId) {
+                log.error({
+                    title: "ERROR",
+                    details: "Log id: " + logId + " ERROR: " + e.message
+                });
+                if (logId) {
+                    record.submitFields({
+                        type: LOG_SERVICE_CONAUTO,
+                        id: logId,
+                        values: {
+                            custrecord_log_serv_error: e.message
+                        }
+                    })
+                }
+            }
         }
 
         return { getInputData, map, reduce, summarize }

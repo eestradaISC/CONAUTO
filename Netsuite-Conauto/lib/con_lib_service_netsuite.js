@@ -82,6 +82,18 @@ define(["N/record", "N/file", "/SuiteScripts/Conauto_Preferences.js", "IMR/IMRSe
             }
         }
 
+        handler.verificarValoresVacios = (objeto, errors, foliosErroneos) => {
+            for (let clave in objeto) {
+                if (objeto.hasOwnProperty(clave)) {
+                    log.debug("objeto[clave]", objeto[clave]);
+                    if (objeto[clave] === "") {
+                        foliosErroneos.push(objeto["numFolio"] || "")
+                        errors.push('EL SISTEMA ENCONTRÓ VALORES VACÍOS EN ' + clave + ' DEL FOLIO ' + objeto["numFolio"] || ' ' + ', ENVIAR ACTUALIZA CONTRATO PREVIAMENTE.');
+                    }
+                }
+            }
+        }
+
         handler.parseFloatRound = (value, decimals) => {
             return parseFloat((parseFloat(value) || 0).toFixed(decimals || 2));
         }
