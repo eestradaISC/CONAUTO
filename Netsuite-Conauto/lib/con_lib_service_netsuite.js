@@ -392,6 +392,7 @@ define(["N/record", "N/file", "/SuiteScripts/Conauto_Preferences.js", "IMR/IMRSe
                         fieldId: "trandate",
                         value: fechaCobranza
                     })
+
                     facturaObj.setValue({
                         fieldId: "custbody_imr_tippolcon",
                         value: 5
@@ -403,6 +404,10 @@ define(["N/record", "N/file", "/SuiteScripts/Conauto_Preferences.js", "IMR/IMRSe
                     facturaObj.setValue({
                         fieldId: "account",
                         value: 2646
+                    });
+                    facturaObj.setValue({
+                        fieldId: "custbody_fecha_de_timbrado",
+                        value: new Date()
                     });
                     facturaObj.setValue({
                         fieldId: "memo",

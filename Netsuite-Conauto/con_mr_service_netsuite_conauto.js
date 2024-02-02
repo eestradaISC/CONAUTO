@@ -189,7 +189,7 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
             summaryContext.output.iterator().each(function (key, value) {
                 log.audit("SUMMARIZE iterator each key:" + key, JSON.stringify(value));
                 value = JSON.parse(value);
-                recordType = value.recordType;
+                resultados.custrecord_log_serv_recordtype = value.recordType;
                 resultados.custrecord_log_serv_transactions = resultados.custrecord_log_serv_transactions.concat(value.transactions);
                 resultados.custrecord_log_serv_solpagos = resultados.custrecord_log_serv_solpagos.concat(value.solPagos);
                 resultados.custrecord_log_serv_record_ids = resultados.custrecord_log_serv_record_ids.concat(value.records);
@@ -902,7 +902,9 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
                         let FieldJournalEntries = ["custrecord_imr_pa_diario", "custrecord_imr_pa_diario_cancelacion", "custrecord_imr_pa_diario_reinstalacion",
                             "custrecord_imr_pa_diario_cxp", "custrecord_imr_pa_diario_can_cxp", "custrecord__imr_pa_diario_seg_auto",
                             "custrecord_imr_pa_factura", "custrecord_imr_pa_nota_credito", "custrecord_imr_pa_diario_cartera",
-                            "custrecord_imr_pa_diario_no_iden", "custrecord_imr_pa_diario_can_segauto", "custrecord_imr_pa_diario_can_cartera"];
+                            "custrecord_imr_pa_diario_no_iden", "custrecord_imr_pa_diario_can_segauto", "custrecord_imr_pa_diario_can_cartera", "custrecord_conauto_reclam_segu",
+                            "custrecord_conauto_aplicacion_rj", "custrecord_conauto_idencobran_rj", "custrecord_conauto_fact_cob_rj"
+                        ];
                         for (let fieldId of FieldJournalEntries) {
                             let transactionId = pagoAmortizacion.getValue(fieldId);
                             if (transactionId) transactions.push(transactionId);
@@ -1151,30 +1153,29 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
          * @param {Array} response.Info
          */
         function cobranzaIdentificada(data, logId) {
-            var records = [];
-            var errors = [];
-            var transactions = [];
-            var folios = [];
-            var recordType = "customrecord_imr_pagos_amortizacion";
-            var payments = data.pagos || [];
+            let records = [];
+            let errors = [];
+            let transactions = [];
+            let folios = [];
+            let recordType = "customrecord_imr_pagos_amortizacion";
+            let payments = data.pagos || [];
             if (payments.length == 0) {
                 throw error.create({
                     name: "EMPTY_PAYMENT_LIST_FIRSTPAYMENT",
                     message: "La lista de pagos esta vacia"
                 })
             }
-            var mandatoryFields = ["referenciaCompleta", "fechaCobranza", "fechaPago", "folioCorrecto", "folioIncorrecto", "monto", "aportacion", "gastos", "iva", "seguro_auto", "seguro_vida"];
-            var errors = [];
-            var pagosId = [];
-            var dataPayments = {};
-            for (var i = 0; i < payments.length; i++) {
-                var payment = payments[i];
+            let mandatoryFields = ["referenciaCompleta", "fechaCobranza", "fechaPago", "folioCorrecto", "folioIncorrecto", "monto", "aportacion", "gastos", "iva", "seguro_auto", "seguro_vida"];
+            let pagosId = [];
+            let dataPayments = {};
+            for (let i = 0; i < payments.length; i++) {
+                let payment = payments[i];
                 lib_conauto.checkMandatoryFields(payment, mandatoryFields, i + 1, errors);
                 pagosId.push(payment.id);
                 dataPayments[payment.id] = payment;
             }
             if (errors.length == 0) {
-                var fields = [
+                let fields = [
                     {
                         type: "text",
                         field: "folioIncorrecto",
@@ -1241,7 +1242,7 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
                         field: "referencia",
                         fieldRecord: "custrecord_imr_pa_referencia",
                         callback: function (value) {
-                            return (value || '').substring(0, 2)
+                            return "SA"
                         }
                     },
                     {
@@ -1300,7 +1301,9 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
                         let FieldJournalEntries = ["custrecord_imr_pa_diario", "custrecord_imr_pa_diario_cancelacion", "custrecord_imr_pa_diario_reinstalacion",
                             "custrecord_imr_pa_diario_cxp", "custrecord_imr_pa_diario_can_cxp", "custrecord__imr_pa_diario_seg_auto",
                             "custrecord_imr_pa_factura", "custrecord_imr_pa_nota_credito", "custrecord_imr_pa_diario_cartera",
-                            "custrecord_imr_pa_diario_no_iden", "custrecord_imr_pa_diario_can_segauto", "custrecord_imr_pa_diario_can_cartera"];
+                            "custrecord_imr_pa_diario_no_iden", "custrecord_imr_pa_diario_can_segauto", "custrecord_imr_pa_diario_can_cartera", "custrecord_conauto_reclam_segu",
+                            "custrecord_conauto_aplicacion_rj", "custrecord_conauto_idencobran_rj", "custrecord_conauto_fact_cob_rj"
+                        ];
                         for (let fieldId of FieldJournalEntries) {
                             let transactionId = pagoAmortizacion.getValue(fieldId);
                             if (transactionId) transactions.push(transactionId);

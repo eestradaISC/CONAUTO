@@ -153,7 +153,7 @@ define(['N/record', "/SuiteScripts/Conauto_Preferences.js", "IMR/IMRSearch", "N/
             let folioText = recordObj.getText("custrecord_imr_pu_folio");
             let integrante = recordObj.getText("custrecord_imr_pu_integrante");
             let numFactura = recordObj.getValue("custrecord_imr_pu_num_factura") || '';
-            let memo = 'Pago de unidad de adjudicados Folio ' + folioText + ' - Gpo ' + grupoText + ' - Int ' + integrante
+            let memo = 'Provisión de Pago de unidad de adjudicados Folio ' + folioText + ' - Gpo ' + grupoText + ' - Int ' + integrante
             if (vendor && importeFactura) {
                 let preferences = conautoPreferences.get();
                 let cuentaPorPagar = preferences.getPreference({

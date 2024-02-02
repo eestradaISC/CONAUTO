@@ -180,6 +180,9 @@ define(["N/record", "IMR/IMRSearch", "/SuiteScripts/Conauto_Preferences.js", "N/
             var folioTexto = recordObj.getText({
                 fieldId: "custrecord_imr_solpa_folio"
             });
+            var folioColumnText = recordObj.getText({
+                fieldId: "custrecord_imr_solpa_folio_texto"
+            });
             var grupo = recordObj.getValue({
                 fieldId: "custrecord_imr_solpa_grupo"
             });
