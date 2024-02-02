@@ -50,7 +50,7 @@ define([
                     'SolicitudPago': solicitudPago,
                     'PolizaIntegrantes': polizaIntegrantes,
                     'ActualizaContrato': actualizaContrato,
-                    'PagoUnidad': pagoUnidad,
+                    // 'PagoUnidad': pagoUnidad,
                     'InteresesMoratorios': interesesMoratorios,
                     'ReservaPasivo': reservaPasivo,
                     'Bajas': bajaFolio,
@@ -1118,7 +1118,7 @@ define([
 
         function recordFind(recordType, operator, field, value) {
             let id = null;
-            
+
             let results = search.searchAllRecords({
                 type: recordType,
                 filters: [

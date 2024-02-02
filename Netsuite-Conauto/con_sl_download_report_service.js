@@ -115,7 +115,7 @@ define(
 
             let xlsFile = file.create({
 
-                name: 'INFORME.xls',
+                name: `INFORME ${new Date()}.xls`,
 
                 fileType: 'EXCEL',
                 folder: 105851,

@@ -245,283 +245,290 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                         });
                     }
                 } else {
-                    if (!diarioCancelacion) {
-                        if (folioId) {
-                            if (!aplicado && importe && !diarioIden) {
-                                let preferences = conautoPreferences.get();
-                                if (grupoLiquidado) {
-                                    log.audit("Entramos al grupo liquidado")
-                                    let diarioId = crearDiarioLiquidacion(preferences, diarioNoIden, recerenciaCompleta, newRecord);
-                                    newRecord.setValue({
-                                        fieldId: "custrecord_imr_pa_diario",
-                                        value: diarioId
+                    if (recerencia != "RJ") {
+                        if (!diarioCancelacion) {
+                            if (folioId) {
+                                if (!aplicado && importe && !diarioIden) {
+                                    let preferences = conautoPreferences.get();
+                                    if (grupoLiquidado) {
+                                        log.audit("Entramos al grupo liquidado")
+                                        let diarioId = crearDiarioLiquidacion(preferences, diarioNoIden, recerenciaCompleta, newRecord);
+                                        newRecord.setValue({
+                                            fieldId: "custrecord_imr_pa_diario",
+                                            value: diarioId
+                                        });
+                                        newRecord.setValue({
+                                            fieldId: "custrecord_imr_pa_aplicado",
+                                            value: true
+                                        });
+                                        newRecord.save({
+                                            ignoreMandatoryFields: true
+                                        });
+                                    } else {
+                                        let idDiario = crearDiarioIndetificado(preferences, montosReparto, diarioNoIden, recerencia, date, importe, formaPago, folioText, folioId, grupoId, cliente, recerenciaCompleta, newRecord, integranteText, grupoText, newRecord);
+                                        newRecord.setValue({
+                                            fieldId: "custrecord_imr_pa_aplicado",
+                                            value: true
+                                        });
+                                        newRecord.setValue({
+                                            fieldId: "custrecord_imr_pa_fecha_aplicacion",
+                                            value: new Date()
+                                        });
+                                        newRecord.setValue({
+                                            fieldId: "custrecord_imr_pa_diario",
+                                            value: idDiario
+                                        });
+                                        newRecord.save({
+                                            ignoreMandatoryFields: true
+                                        });
+                                    }
+                                }
+                            } else if (!diarioNoIden && !diarioIden) {
+                                crearDiarioNoIden(newRecord)
+                            }
+                            if (esCancelado) {
+                                crearDiarioCancelacionPago(context.newRecord.id);
+                            }
+                        }
+                        let countLinePre = newRecord.getLineCount({
+                            sublistId: "recmachcustrecord_imr_pre_pago"
+                        });
+                        if (esCancelado) {
+                            newRecord = record.load({
+                                type: context.newRecord.type,
+                                id: context.newRecord.id,
+                                isDynamic: true
+                            });
+                            let folio = newRecord.getValue({
+                                fieldId: "custrecord_imr_pa_folio"
+                            });
+                            let estadoFolioCancelacion = newRecord.getValue({
+                                fieldId: "custrecord_imr_estado_folio_cancelar",
+                            }) || '';
+                            if (!estadoFolioCancelacion) {
+                                if (folio) {
+                                    estadoFolioCancelacion = search.lookupFieldsIMR({
+                                        id: folio,
+                                        type: "customrecord_cseg_folio_conauto",
+                                        columns: ["custrecord_folio_estado"]
+                                    }).custrecord_folio_estado.value;
+                                }
+                                newRecord.setValue({
+                                    fieldId: "custrecord_imr_estado_folio_cancelar",
+                                    value: estadoFolioCancelacion
+                                })
+                            }
+
+                            for (let i = 0; i < countLinePre; i++) {
+                                let tipoPrelacion = newRecord.getSublistValue({
+                                    sublistId: "recmachcustrecord_imr_pre_pago",
+                                    fieldId: "custrecord_imr_pre_tipo_prelacion",
+                                    line: i
+                                });
+                                let lineAmortizacion = newRecord.getSublistValue({
+                                    sublistId: "recmachcustrecord_imr_pre_pago",
+                                    fieldId: "custrecord__imr_pre_line_amortizacion",
+                                    line: i
+                                });
+                                if (!tipoPrelacion) {
+                                    let gastos = parseFloat(newRecord.getSublistValue({
+                                        sublistId: "recmachcustrecord_imr_pre_pago",
+                                        fieldId: "custrecord_imr_pre_gastos",
+                                        line: i
+                                    })) * -1;
+                                    let iva = parseFloat(newRecord.getSublistValue({
+                                        sublistId: "recmachcustrecord_imr_pre_pago",
+                                        fieldId: "custrecord_imr_pre_iva",
+                                        line: i
+                                    })) * -1;
+                                    let seguroVida = parseFloat(newRecord.getSublistValue({
+                                        sublistId: "recmachcustrecord_imr_pre_pago",
+                                        fieldId: "custrecord_imr_pre_seguro_vida",
+                                        line: i
+                                    })) * -1;
+                                    let seguroAuto = parseFloat(newRecord.getSublistValue({
+                                        sublistId: "recmachcustrecord_imr_pre_pago",
+                                        fieldId: "custrecord_imr_pre_seguro_auto",
+                                        line: i
+                                    })) * -1;
+                                    let aportacion = parseFloat(newRecord.getSublistValue({
+                                        sublistId: "recmachcustrecord_imr_pre_pago",
+                                        fieldId: "custrecord_imr_pre_aportacion",
+                                        line: i
+                                    })) * -1;
+                                    let saldoFavor = parseFloat(newRecord.getSublistValue({
+                                        sublistId: "recmachcustrecord_imr_pre_pago",
+                                        fieldId: "custrecord_imr_pre_saldo_favor",
+                                        line: i
+                                    })) * -1;
+                                    newRecord.selectNewLine({
+                                        sublistId: "recmachcustrecord_imr_pre_pago"
                                     });
-                                    newRecord.setValue({
-                                        fieldId: "custrecord_imr_pa_aplicado",
-                                        value: true
+                                    newRecord.setCurrentSublistValue({
+                                        sublistId: "recmachcustrecord_imr_pre_pago",
+                                        fieldId: "custrecord_imr_pre_gastos",
+                                        value: gastos
                                     });
-                                    newRecord.save({
-                                        ignoreMandatoryFields: true
+                                    newRecord.setCurrentSublistValue({
+                                        sublistId: "recmachcustrecord_imr_pre_pago",
+                                        fieldId: "custrecord_imr_pre_iva",
+                                        value: iva
                                     });
-                                } else {
-                                    let idDiario = crearDiarioIndetificado(preferences, montosReparto, diarioNoIden, recerencia, date, importe, formaPago, folioText, folioId, grupoId, cliente, recerenciaCompleta, newRecord, integranteText, grupoText, newRecord);
-                                    newRecord.setValue({
-                                        fieldId: "custrecord_imr_pa_aplicado",
-                                        value: true
+                                    newRecord.setCurrentSublistValue({
+                                        sublistId: "recmachcustrecord_imr_pre_pago",
+                                        fieldId: "custrecord_imr_pre_seguro_vida",
+                                        value: seguroVida
                                     });
-                                    newRecord.setValue({
-                                        fieldId: "custrecord_imr_pa_fecha_aplicacion",
-                                        value: new Date()
+                                    newRecord.setCurrentSublistValue({
+                                        sublistId: "recmachcustrecord_imr_pre_pago",
+                                        fieldId: "custrecord_imr_pre_seguro_auto",
+                                        value: seguroAuto
                                     });
-                                    newRecord.setValue({
-                                        fieldId: "custrecord_imr_pa_diario",
-                                        value: idDiario
+                                    newRecord.setCurrentSublistValue({
+                                        sublistId: "recmachcustrecord_imr_pre_pago",
+                                        fieldId: "custrecord_imr_pre_aportacion",
+                                        value: aportacion
                                     });
-                                    newRecord.save({
-                                        ignoreMandatoryFields: true
+                                    newRecord.setCurrentSublistValue({
+                                        sublistId: "recmachcustrecord_imr_pre_pago",
+                                        fieldId: "custrecord_imr_pre_saldo_favor",
+                                        value: saldoFavor
                                     });
+                                    newRecord.setCurrentSublistValue({
+                                        sublistId: "recmachcustrecord_imr_pre_pago",
+                                        fieldId: "custrecord__imr_pre_line_amortizacion",
+                                        value: lineAmortizacion
+                                    });
+                                    newRecord.setCurrentSublistValue({
+                                        sublistId: "recmachcustrecord_imr_pre_pago",
+                                        fieldId: "custrecord_imr_pre_tipo_prelacion",
+                                        value: "1"
+                                    });
+                                    newRecord.commitLine({
+                                        sublistId: "recmachcustrecord_imr_pre_pago"
+                                    })
                                 }
                             }
-                        } else if (!diarioNoIden && !diarioIden) {
-                            crearDiarioNoIden(newRecord)
+                            newRecord.save({
+                                ignoreMandatoryFields: true,
+                            });
+                            newRecord = record.load({
+                                type: context.newRecord.type,
+                                id: context.newRecord.id
+                            });
                         }
-                        if (esCancelado) {
-                            crearDiarioCancelacionPago(context.newRecord.id);
-                        }
-                    }
-                    let countLinePre = newRecord.getLineCount({
-                        sublistId: "recmachcustrecord_imr_pre_pago"
-                    });
-                    if (esCancelado) {
-                        newRecord = record.load({
-                            type: context.newRecord.type,
-                            id: context.newRecord.id,
-                            isDynamic: true
-                        });
-                        let folio = newRecord.getValue({
-                            fieldId: "custrecord_imr_pa_folio"
-                        });
-                        let estadoFolioCancelacion = newRecord.getValue({
-                            fieldId: "custrecord_imr_estado_folio_cancelar",
-                        }) || '';
-                        if (!estadoFolioCancelacion) {
-                            if (folio) {
-                                estadoFolioCancelacion = search.lookupFieldsIMR({
-                                    id: folio,
-                                    type: "customrecord_cseg_folio_conauto",
-                                    columns: ["custrecord_folio_estado"]
-                                }).custrecord_folio_estado.value;
-                            }
+                        if (reinstalacion && !diarioReinstalacion) {
+                            let preferences = conautoPreferences.get();
+                            let idDiario = crearDiarioIndetificadoReinstalacion(preferences, montosReparto, diarioNoIden, recerencia, date, importe, formaPago, folioText, folioId, grupoId, cliente, recerenciaCompleta, newRecord);
                             newRecord.setValue({
-                                fieldId: "custrecord_imr_estado_folio_cancelar",
-                                value: estadoFolioCancelacion
-                            })
+                                fieldId: "custrecord_imr_pa_diario_reinstalacion",
+                                value: idDiario
+                            });
+                            newRecord.save({
+                                ignoreMandatoryFields: true
+                            });
                         }
-                        // for (let i = countLinePre - 1; i >= 0; i--) {
-                        //     let tipoPrelacion = newRecord.getSublistValue({
-                        //         sublistId: "recmachcustrecord_imr_pre_pago",
-                        //         fieldId: "custrecord_imr_pre_tipo_prelacion",
-                        //         line: i
-                        //     });
-                        //     if (tipoPrelacion == '1') {
-                        //         newRecord.removeLine({
-                        //             sublistId: "recmachcustrecord_imr_pre_pago",
-                        //             line: i
-                        //         })
-                        //     }
-                        // }
+                        if (reinstalacion) {
+                            newRecord = record.load({
+                                type: context.newRecord.type,
+                                id: context.newRecord.id,
+                                isDynamic: true
+                            });
 
-                        for (let i = 0; i < countLinePre; i++) {
-                            let tipoPrelacion = newRecord.getSublistValue({
-                                sublistId: "recmachcustrecord_imr_pre_pago",
-                                fieldId: "custrecord_imr_pre_tipo_prelacion",
-                                line: i
-                            });
-                            let lineAmortizacion = newRecord.getSublistValue({
-                                sublistId: "recmachcustrecord_imr_pre_pago",
-                                fieldId: "custrecord__imr_pre_line_amortizacion",
-                                line: i
-                            });
-                            if (!tipoPrelacion) {
-                                let gastos = parseFloat(newRecord.getSublistValue({
+                            for (let i = countLinePre - 1; i >= 0; i--) {
+                                let tipoPrelacion = newRecord.getSublistValue({
                                     sublistId: "recmachcustrecord_imr_pre_pago",
-                                    fieldId: "custrecord_imr_pre_gastos",
+                                    fieldId: "custrecord_imr_pre_tipo_prelacion",
                                     line: i
-                                })) * -1;
-                                let iva = parseFloat(newRecord.getSublistValue({
+                                });
+                                if (tipoPrelacion == '2') {
+                                    newRecord.removeLine({
+                                        sublistId: "recmachcustrecord_imr_pre_pago",
+                                        line: i
+                                    })
+                                }
+                            }
+
+                            for (let i = 0; i < countLinePre; i++) {
+                                let tipoPrelacion = newRecord.getSublistValue({
                                     sublistId: "recmachcustrecord_imr_pre_pago",
-                                    fieldId: "custrecord_imr_pre_iva",
+                                    fieldId: "custrecord_imr_pre_tipo_prelacion",
                                     line: i
-                                })) * -1;
-                                let seguroVida = parseFloat(newRecord.getSublistValue({
+                                });
+                                let lineAmortizacion = newRecord.getSublistValue({
                                     sublistId: "recmachcustrecord_imr_pre_pago",
-                                    fieldId: "custrecord_imr_pre_seguro_vida",
+                                    fieldId: "custrecord__imr_pre_line_amortizacion",
                                     line: i
-                                })) * -1;
-                                let seguroAuto = parseFloat(newRecord.getSublistValue({
-                                    sublistId: "recmachcustrecord_imr_pre_pago",
-                                    fieldId: "custrecord_imr_pre_seguro_auto",
-                                    line: i
-                                })) * -1;
-                                let aportacion = parseFloat(newRecord.getSublistValue({
-                                    sublistId: "recmachcustrecord_imr_pre_pago",
-                                    fieldId: "custrecord_imr_pre_aportacion",
-                                    line: i
-                                })) * -1;
+                                });
                                 let saldoFavor = parseFloat(newRecord.getSublistValue({
                                     sublistId: "recmachcustrecord_imr_pre_pago",
                                     fieldId: "custrecord_imr_pre_saldo_favor",
                                     line: i
                                 })) * -1;
-                                newRecord.selectNewLine({
-                                    sublistId: "recmachcustrecord_imr_pre_pago"
-                                });
-                                newRecord.setCurrentSublistValue({
-                                    sublistId: "recmachcustrecord_imr_pre_pago",
-                                    fieldId: "custrecord_imr_pre_gastos",
-                                    value: gastos
-                                });
-                                newRecord.setCurrentSublistValue({
-                                    sublistId: "recmachcustrecord_imr_pre_pago",
-                                    fieldId: "custrecord_imr_pre_iva",
-                                    value: iva
-                                });
-                                newRecord.setCurrentSublistValue({
-                                    sublistId: "recmachcustrecord_imr_pre_pago",
-                                    fieldId: "custrecord_imr_pre_seguro_vida",
-                                    value: seguroVida
-                                });
-                                newRecord.setCurrentSublistValue({
-                                    sublistId: "recmachcustrecord_imr_pre_pago",
-                                    fieldId: "custrecord_imr_pre_seguro_auto",
-                                    value: seguroAuto
-                                });
-                                newRecord.setCurrentSublistValue({
-                                    sublistId: "recmachcustrecord_imr_pre_pago",
-                                    fieldId: "custrecord_imr_pre_aportacion",
-                                    value: aportacion
-                                });
-                                newRecord.setCurrentSublistValue({
-                                    sublistId: "recmachcustrecord_imr_pre_pago",
-                                    fieldId: "custrecord_imr_pre_saldo_favor",
-                                    value: saldoFavor
-                                });
-                                newRecord.setCurrentSublistValue({
-                                    sublistId: "recmachcustrecord_imr_pre_pago",
-                                    fieldId: "custrecord__imr_pre_line_amortizacion",
-                                    value: lineAmortizacion
-                                });
-                                newRecord.setCurrentSublistValue({
-                                    sublistId: "recmachcustrecord_imr_pre_pago",
-                                    fieldId: "custrecord_imr_pre_tipo_prelacion",
-                                    value: "1"
-                                });
-                                newRecord.commitLine({
-                                    sublistId: "recmachcustrecord_imr_pre_pago"
-                                })
+                                if (!tipoPrelacion && saldoFavor != 0) {
+                                    newRecord.selectNewLine({
+                                        sublistId: "recmachcustrecord_imr_pre_pago"
+                                    });
+                                    newRecord.setCurrentSublistValue({
+                                        sublistId: "recmachcustrecord_imr_pre_pago",
+                                        fieldId: "custrecord_imr_pre_saldo_favor",
+                                        value: saldoFavor
+                                    });
+                                    newRecord.setCurrentSublistValue({
+                                        sublistId: "recmachcustrecord_imr_pre_pago",
+                                        fieldId: "custrecord__imr_pre_line_amortizacion",
+                                        value: lineAmortizacion
+                                    });
+                                    newRecord.setCurrentSublistValue({
+                                        sublistId: "recmachcustrecord_imr_pre_pago",
+                                        fieldId: "custrecord_imr_pre_tipo_prelacion",
+                                        value: "2"
+                                    });
+                                    newRecord.commitLine({
+                                        sublistId: "recmachcustrecord_imr_pre_pago"
+                                    })
+                                }
                             }
+                            newRecord.save({
+                                ignoreMandatoryFields: true,
+                            });
+                            newRecord = record.load({
+                                type: context.newRecord.type,
+                                id: context.newRecord.id
+                            });
                         }
-                        newRecord.save({
-                            ignoreMandatoryFields: true,
-                        });
-                        newRecord = record.load({
-                            type: context.newRecord.type,
-                            id: context.newRecord.id
-                        });
-                    }
-                    if (reinstalacion && !diarioReinstalacion) {
+
                         let preferences = conautoPreferences.get();
-                        let idDiario = crearDiarioIndetificadoReinstalacion(preferences, montosReparto, diarioNoIden, recerencia, date, importe, formaPago, folioText, folioId, grupoId, cliente, recerenciaCompleta, newRecord);
+                        // updatePrelacion(context.newRecord.id, amortizacionId);
+                        createInvoice(context.newRecord.id, preferences);
+                        createJournalSeguroAuto(context.newRecord.id, preferences);
+                        createJournalCXP(context.newRecord.id, preferences);
+                        createJournalcancelacionDevolucionCartera(context.newRecord.id, preferences);
+                        createJournalCancelacionCXP(context.newRecord.id, preferences);
+                        createJournalCancelacionSeguroAuto(context.newRecord.id, preferences);
+                        createCreditMemo(context.newRecord.id, preferences);
+                        createJournalCartera(context.newRecord.id, preferences, montosReparto);
+
+                    } else {
+                        let preferences = conautoPreferences.get();
+                        crearDiarioAplicacionSaldoRJ(preferences, date, importe, folioText, folioId, grupoId, cliente, recerenciaCompleta, integranteText, grupoText, newRecord, newRecord);
+                        crearDiarioCobranzaRecibidaRJ(preferences, date, importe, folioText, folioId, grupoId, cliente, recerenciaCompleta, integranteText, grupoText, newRecord, newRecord);
+
                         newRecord.setValue({
-                            fieldId: "custrecord_imr_pa_diario_reinstalacion",
-                            value: idDiario
+                            fieldId: "custrecord_imr_pa_aplicado",
+                            value: true
+                        });
+                        newRecord.setValue({
+                            fieldId: "custrecord_imr_pa_fecha_aplicacion",
+                            value: new Date()
                         });
                         newRecord.save({
                             ignoreMandatoryFields: true
                         });
+                        crearFacturaCobranzaRecibidaRJ(context.newRecord.id, preferences);
                     }
-                    if (reinstalacion) {
-                        newRecord = record.load({
-                            type: context.newRecord.type,
-                            id: context.newRecord.id,
-                            isDynamic: true
-                        });
-
-                        for (let i = countLinePre - 1; i >= 0; i--) {
-                            let tipoPrelacion = newRecord.getSublistValue({
-                                sublistId: "recmachcustrecord_imr_pre_pago",
-                                fieldId: "custrecord_imr_pre_tipo_prelacion",
-                                line: i
-                            });
-                            if (tipoPrelacion == '2') {
-                                newRecord.removeLine({
-                                    sublistId: "recmachcustrecord_imr_pre_pago",
-                                    line: i
-                                })
-                            }
-                        }
-
-                        for (let i = 0; i < countLinePre; i++) {
-                            let tipoPrelacion = newRecord.getSublistValue({
-                                sublistId: "recmachcustrecord_imr_pre_pago",
-                                fieldId: "custrecord_imr_pre_tipo_prelacion",
-                                line: i
-                            });
-                            let lineAmortizacion = newRecord.getSublistValue({
-                                sublistId: "recmachcustrecord_imr_pre_pago",
-                                fieldId: "custrecord__imr_pre_line_amortizacion",
-                                line: i
-                            });
-                            let saldoFavor = parseFloat(newRecord.getSublistValue({
-                                sublistId: "recmachcustrecord_imr_pre_pago",
-                                fieldId: "custrecord_imr_pre_saldo_favor",
-                                line: i
-                            })) * -1;
-                            if (!tipoPrelacion && saldoFavor != 0) {
-                                newRecord.selectNewLine({
-                                    sublistId: "recmachcustrecord_imr_pre_pago"
-                                });
-                                newRecord.setCurrentSublistValue({
-                                    sublistId: "recmachcustrecord_imr_pre_pago",
-                                    fieldId: "custrecord_imr_pre_saldo_favor",
-                                    value: saldoFavor
-                                });
-                                newRecord.setCurrentSublistValue({
-                                    sublistId: "recmachcustrecord_imr_pre_pago",
-                                    fieldId: "custrecord__imr_pre_line_amortizacion",
-                                    value: lineAmortizacion
-                                });
-                                newRecord.setCurrentSublistValue({
-                                    sublistId: "recmachcustrecord_imr_pre_pago",
-                                    fieldId: "custrecord_imr_pre_tipo_prelacion",
-                                    value: "2"
-                                });
-                                newRecord.commitLine({
-                                    sublistId: "recmachcustrecord_imr_pre_pago"
-                                })
-                            }
-                        }
-                        newRecord.save({
-                            ignoreMandatoryFields: true,
-                        });
-                        newRecord = record.load({
-                            type: context.newRecord.type,
-                            id: context.newRecord.id
-                        });
-                    }
-
-                    let preferences = conautoPreferences.get();
-                    // updatePrelacion(context.newRecord.id, amortizacionId);
-                    createInvoice(context.newRecord.id, preferences);
-                    createJournalSeguroAuto(context.newRecord.id, preferences);
-                    createJournalCXP(context.newRecord.id, preferences);
-                    createJournalcancelacionDevolucionCartera(context.newRecord.id, preferences);
-                    createJournalCancelacionCXP(context.newRecord.id, preferences);
-                    createJournalCancelacionSeguroAuto(context.newRecord.id, preferences);
-                    createCreditMemo(context.newRecord.id, preferences);
-                    createJournalCartera(context.newRecord.id, preferences, montosReparto);
-
                 }
+
             }
         }
 
@@ -1905,6 +1912,10 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                         value: 6
                     });
                     facturaObj.setValue({
+                        fieldId: "custbody_fecha_de_timbrado",
+                        value: new Date()
+                    });
+                    facturaObj.setValue({
                         fieldId: "cseg_folio_conauto",
                         value: folioId
                     });
@@ -2264,6 +2275,11 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                 let idDiario = diarioObj.save({
                     ignoreMandatoryFields: true
                 });
+                log.audit("REFERENCIA", recerencia)
+                log.audit("ESTAADO", estado)
+                if (recerencia == "RI" && estado == '4') {
+                    crearDiarioReclamacionSeguro(preferences, diarioNoIden, date, importe, folioText, folioId, grupoId, cliente, recerenciaCompleta, newRecord, integranteText, grupoText, pagoObj);
+                }
                 conautoPreferences.setFolioConauto(idDiario);
                 return idDiario;
             } catch (e) {
@@ -2271,6 +2287,7 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
             }
         }
 
+        //TODO: AGREGAR RI
         function crearDiarioLiquidacion(preferences, diarioNoIden, recerenciaCompleta, pagoObj) {
             try {
                 log.audit("crearDiarioLiquidacion")
@@ -2436,6 +2453,7 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                     key: "CB1P",
                     reference: recerencia
                 });
+
                 addLineJournal(diarioObj, cuentaCobranza, true, importe.toFixed(2), {
                     memo: memoText,
                     custcol_referencia_conauto: recerenciaCompleta,
@@ -2457,6 +2475,7 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                     fieldId: "custrecord_imr_pa_diario_no_iden",
                     value: diarioId
                 });
+
                 pagoObj.save({
                     ignoreMandatoryFields: true
                 });
@@ -2464,6 +2483,460 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                 log.error('crearDiarioNoIden', 'Linea 2529: ' + e);
             }
         }
+
+        function crearDiarioReclamacionSeguro(preferences, diarioNoIden, date, importe, folioText, folioId, grupoId, cliente, recerenciaCompleta, newRecord, integranteText, grupoText, pagoObj) {
+            try {
+                log.audit("crearDiarioReclamacionSeguro")
+                let cuentaCobranza = null;
+                if (diarioNoIden) {
+                    cuentaCobranza = preferences.getPreference({
+                        key: "CCNI"
+                    });
+                } else {
+                    cuentaCobranza = preferences.getPreference({
+                        key: "SA",
+                        reference: "RECLAMOSEGUROAUTO"
+                    });
+                }
+
+                let folioColumnText = pagoObj.getText({
+                    fieldId: "custrecord_imr_pa_folio_texto"
+                });
+
+                let subsidiary = preferences.getPreference({
+                    key: "SUBCONAUTO"
+                });
+                let diarioObj = record.create({
+                    type: record.Type.JOURNAL_ENTRY,
+                    isDynamic: true
+                });
+                diarioObj.setValue({
+                    fieldId: "subsidiary",
+                    value: subsidiary
+                });
+                diarioObj.setValue({
+                    fieldId: "custbody_imr_tippolcon",
+                    value: 1
+                });
+                diarioObj.setValue({
+                    fieldId: "trandate",
+                    value: date
+                });
+                diarioObj.setValue({
+                    fieldId: "currency",
+                    value: 1
+                });
+                let memoText = "Aplicación de Saldo a Estado de Cuenta de la referencia  " + recerenciaCompleta + " - Folio " + folioText + " - Gpo " + grupoText + " - Int" + integranteText;
+                diarioObj.setValue({
+                    fieldId: "memo",
+                    value: memoText
+                });
+                diarioObj.setValue({
+                    fieldId: "custbody_tipo_transaccion_conauto",
+                    value: 5
+                });
+                diarioObj.setValue({ fieldId: "custbody_imr_ref_pagoamortizaciones", value: newRecord.id });
+
+                let cuentaConcepto = preferences.getPreference({
+                    key: "CB1P",
+                    reference: "RI"
+                });
+
+                addLineJournal(diarioObj, cuentaCobranza, true, importe.toFixed(2), {
+                    memo: memoText,
+                    custcol_referencia_conauto: recerenciaCompleta,
+                    custcol_metodo_pago_conauto: 3,
+                    custcol_folio_texto_conauto: folioColumnText,
+                    cseg_folio_conauto: folioId,
+                    cseg_grupo_conauto: grupoId,
+                    entity: cliente,
+                    location: 6
+                });
+                addLineJournal(diarioObj, cuentaConcepto, false, importe.toFixed(2), {
+                    memo: memoText,
+                    custcol_referencia_conauto: recerenciaCompleta,
+                    custcol_metodo_pago_conauto: 3,
+                    custcol_folio_texto_conauto: folioColumnText,
+                    cseg_folio_conauto: folioId,
+                    cseg_grupo_conauto: grupoId,
+                    entity: cliente,
+                    location: 6
+                })
+                let diarioId = diarioObj.save({
+                    ignoreMandatoryFields: true
+                });
+                pagoObj.setValue({
+                    fieldId: "custrecord_conauto_reclam_segu",
+                    value: diarioId
+                });
+            } catch (e) {
+                log.error('crearDiarioReclamacionSeguro', e);
+            }
+        }
+
+        function crearDiarioAplicacionSaldoRJ(preferences, date, importe, folioText, folioId, grupoId, cliente, recerenciaCompleta, integranteText, grupoText, newRecord, pagoObj) {
+            try {
+                log.audit("crearDiarioAplicacionSaldoRJ")
+                let subsidiary = preferences.getPreference({
+                    key: "SUBCONAUTO"
+                });
+                let folioColumnText = pagoObj.getText({
+                    fieldId: "custrecord_imr_pa_folio_texto"
+                });
+                let cuentaDebito = preferences.getPreference({
+                    key: "BIIN",
+                    reference: "debito"
+                });
+                let cuentaCredito = preferences.getPreference({
+                    key: "BIIN",
+                    reference: "credito"
+                });
+                let diarioObj = record.create({
+                    type: record.Type.JOURNAL_ENTRY,
+                    isDynamic: true
+                });
+                diarioObj.setValue({
+                    fieldId: "subsidiary",
+                    value: subsidiary
+                });
+                diarioObj.setValue({
+                    fieldId: "custbody_imr_tippolcon",
+                    value: 1
+                });
+                diarioObj.setValue({
+                    fieldId: "trandate",
+                    value: date
+                });
+                diarioObj.setValue({
+                    fieldId: "currency",
+                    value: 1
+                });
+                let memoText = "Aplicación de Saldo a Estado de Cuenta de la referencia  " + recerenciaCompleta + " - Folio " + folioText + " - Gpo " + grupoText + " - Int" + integranteText;
+                diarioObj.setValue({
+                    fieldId: "memo",
+                    value: memoText
+                });
+                diarioObj.setValue({
+                    fieldId: "custbody_tipo_transaccion_conauto",
+                    value: 5
+                });
+                diarioObj.setValue({ fieldId: "custbody_imr_ref_pagoamortizaciones", value: newRecord.id });
+                addLineJournal(diarioObj, cuentaDebito, true, importe.toFixed(2), {
+                    memo: memoText,
+                    custcol_referencia_conauto: recerenciaCompleta,
+                    custcol_metodo_pago_conauto: 3,
+                    custcol_folio_texto_conauto: folioColumnText,
+                    cseg_folio_conauto: folioId,
+                    cseg_grupo_conauto: grupoId,
+                    entity: cliente,
+                    location: 6
+                });
+
+                addLineJournal(diarioObj, cuentaCredito, false, importe.toFixed(2), {
+                    memo: memoText,
+                    custcol_referencia_conauto: recerenciaCompleta,
+                    custcol_metodo_pago_conauto: 3,
+                    custcol_folio_texto_conauto: folioColumnText,
+                    cseg_folio_conauto: folioId,
+                    cseg_grupo_conauto: grupoId,
+                    entity: cliente,
+                    location: 6
+                });
+                let diarioId = diarioObj.save({
+                    ignoreMandatoryFields: true
+                });
+                pagoObj.setValue({
+                    fieldId: "custrecord_conauto_aplicacion_rj",
+                    value: diarioId
+                });
+            } catch (error) {
+                log.error('crearDiarioAplicacionSaldoRJ', error);
+            }
+        }
+
+        function crearDiarioCobranzaRecibidaRJ(preferences, date, importe, folioText, folioId, grupoId, cliente, recerenciaCompleta, integranteText, grupoText, newRecord, pagoObj) {
+            try {
+                log.audit("crearDiarioCobranzaRecibidaRJ")
+                let subsidiary = preferences.getPreference({
+                    key: "SUBCONAUTO"
+                });
+                let folioColumnText = pagoObj.getText({
+                    fieldId: "custrecord_imr_pa_folio_texto"
+                });
+                let cuentaDebito = preferences.getPreference({
+                    key: "BIDA",
+                    reference: "recepcionPagos"
+                });
+                let cuentaCredito = preferences.getPreference({
+                    key: "BIIN",
+                    reference: "cobranza"
+                });
+                let diarioObj = record.create({
+                    type: record.Type.JOURNAL_ENTRY,
+                    isDynamic: true
+                });
+                diarioObj.setValue({
+                    fieldId: "subsidiary",
+                    value: subsidiary
+                });
+                diarioObj.setValue({
+                    fieldId: "custbody_imr_tippolcon",
+                    value: 1
+                });
+                diarioObj.setValue({
+                    fieldId: "trandate",
+                    value: date
+                });
+                diarioObj.setValue({
+                    fieldId: "currency",
+                    value: 1
+                });
+                let memoText = "identificación de la cobranza Recibida de la referencia  " + recerenciaCompleta + " - Folio " + folioText + " - Gpo " + grupoText + " - Int" + integranteText;
+                diarioObj.setValue({
+                    fieldId: "memo",
+                    value: memoText
+                });
+                diarioObj.setValue({
+                    fieldId: "custbody_tipo_transaccion_conauto",
+                    value: 5
+                });
+                diarioObj.setValue({ fieldId: "custbody_imr_ref_pagoamortizaciones", value: newRecord.id });
+                addLineJournal(diarioObj, cuentaDebito, true, importe.toFixed(2), {
+                    memo: memoText,
+                    custcol_referencia_conauto: recerenciaCompleta,
+                    custcol_metodo_pago_conauto: 3,
+                    custcol_folio_texto_conauto: folioColumnText,
+                    cseg_folio_conauto: folioId,
+                    cseg_grupo_conauto: grupoId,
+                    entity: cliente,
+                    location: 6
+                });
+
+                addLineJournal(diarioObj, cuentaCredito, false, importe.toFixed(2), {
+                    memo: memoText,
+                    custcol_referencia_conauto: recerenciaCompleta,
+                    custcol_metodo_pago_conauto: 3,
+                    custcol_folio_texto_conauto: folioColumnText,
+                    cseg_folio_conauto: folioId,
+                    cseg_grupo_conauto: grupoId,
+                    entity: cliente,
+                    location: 6
+                });
+                let diarioId = diarioObj.save({
+                    ignoreMandatoryFields: true
+                });
+                pagoObj.setValue({
+                    fieldId: "custrecord_conauto_idencobran_rj",
+                    value: diarioId
+                });
+            } catch (error) {
+                log.error('crearDiarioCobranzaRecibidaRJ', error);
+            }
+        }
+
+        function crearFacturaCobranzaRecibidaRJ(idPago, preferences) {
+            try {
+                log.audit("crearFacturaCobranzaRecibidaRJ")
+                let pagoObj = record.load({
+                    id: idPago,
+                    type: "customrecord_imr_pagos_amortizacion"
+                });
+                let fechaCobranza = pagoObj.getValue({
+                    fieldId: "custrecord_imr_pa_fecha"
+                });
+                let tipoBoleta = pagoObj.getValue({
+                    fieldId: "custrecord_imr_pa_tipo_boleta_interna"
+                });
+                let tipoBoletaTexto = pagoObj.getText({
+                    fieldId: "custrecord_imr_pa_tipo_boleta_interna"
+                });
+                let recerenciaCompleta = pagoObj.getValue({
+                    fieldId: "custrecord_imr_pa_referencia_completa"
+                });
+                let cliente = pagoObj.getValue({
+                    fieldId: "custrecord_imr_pa_cliente_integrante"
+                });
+                let folioText = pagoObj.getText({
+                    fieldId: "custrecord_imr_pa_folio"
+                });
+                let folioId = pagoObj.getValue({
+                    fieldId: "custrecord_imr_pa_folio"
+                });
+                let grupoId = pagoObj.getValue({
+                    fieldId: "custrecord_imr_pa_grupo"
+                });
+                let grupoText = pagoObj.getText({
+                    fieldId: "custrecord_imr_pa_grupo"
+                });
+                let integranteText = pagoObj.getText({
+                    fieldId: "custrecord_imr_pa_integrante"
+                });
+                let facturaId = pagoObj.getValue({
+                    fieldId: "custrecord_conauto_fact_cob_rj"
+                });
+                let formaPagoFe = pagoObj.getValue({
+                    fieldId: "custrecord_imr_pa_forma_pago"
+                });
+                let importe = pagoObj.getValue({
+                    fieldId: "custrecord_conauto_aportacion"
+                });
+                let ivaGasto = pagoObj.getValue({
+                    fieldId: "custrecord_conauto_iva"
+                });
+                let formaPagoFetxt = "";
+                if (formaPagoFe) {
+                    formaPagoFetxt = search.lookupFieldsIMR({
+                        type: "customrecord_fe_metodos_pago",
+                        id: formaPagoFe,
+                        columns: ["name"]
+                    }).name.value
+                }
+
+                if (!facturaId && ivaGasto > 0) {
+                    log.audit("ENTRA")
+                    let typeTransaccion = typesTransaccion[tipoBoleta] || '';
+                    let facturaObj = record.create({
+                        type: record.Type.CASH_SALE,
+                        isDynamic: true
+                    });
+                    let subsidiary = preferences.getPreference({
+                        key: "SUBCONAUTO"
+                    });
+                    let item = preferences.getPreference({
+                        key: "ARTINTCLIENTE"
+                    });
+                    let memo = "Cobranza Recibida en Sistema de Comercialización de la referencia " + recerenciaCompleta + " - Folio " + folioText + " - Gpo " + grupoText + " - Int " + integranteText;
+
+                    facturaObj.setValue({
+                        fieldId: "entity",
+                        value: cliente
+                    });
+                    facturaObj.setValue({
+                        fieldId: "trandate",
+                        value: fechaCobranza
+                    })
+                    facturaObj.setValue({
+                        fieldId: "custbody_imr_tippolcon",
+                        value: 5
+                    });
+                    facturaObj.setValue({
+                        fieldId: "custbody_ce_tipo_de_poliza",
+                        value: 1
+                    })
+                    facturaObj.setValue({
+                        fieldId: "undepfunds",
+                        value: 'F'
+                    });
+                    facturaObj.setValue({
+                        fieldId: "account",
+                        value: 2646
+                    });
+                    facturaObj.setValue({
+                        fieldId: "memo",
+                        value: memo
+                    });
+                    facturaObj.setValue({
+                        fieldId: "department",
+                        value: 34
+                    });
+                    facturaObj.setValue({
+                        fieldId: "class",
+                        value: 6
+                    });
+                    facturaObj.setValue({
+                        fieldId: "custbody_fecha_de_timbrado",
+                        value: new Date()
+                    });
+                    facturaObj.setValue({
+                        fieldId: "cseg_folio_conauto",
+                        value: folioId
+                    });
+                    facturaObj.setValue({
+                        fieldId: "cseg_grupo_conauto",
+                        value: grupoId
+                    });
+                    facturaObj.setValue({
+                        fieldId: "custbody_tipo_transaccion_conauto",
+                        value: typeTransaccion
+                    });
+                    facturaObj.setValue({
+                        fieldId: "custbody_fe_metodo_de_pago",
+                        value: formaPagoFe
+                    });
+                    facturaObj.setValue({
+                        fieldId: "custbody_fe_metodo_de_pago_txt",
+                        value: formaPagoFetxt
+                    });
+                    facturaObj.selectNewLine({
+                        sublistId: "item"
+                    })
+                    facturaObj.setCurrentSublistValue({
+                        sublistId: "item",
+                        fieldId: "item",
+                        value: item
+                    });
+                    facturaObj.setCurrentSublistValue({
+                        sublistId: "item",
+                        fieldId: "description",
+                        value: memo
+                    });
+                    facturaObj.setCurrentSublistValue({
+                        sublistId: "item",
+                        fieldId: "price",
+                        value: -1
+                    });
+                    facturaObj.setCurrentSublistValue({
+                        sublistId: "item",
+                        fieldId: "quantity",
+                        value: 1
+                    });
+                    facturaObj.setCurrentSublistValue({
+                        sublistId: "item",
+                        fieldId: "rate",
+                        value: importe
+                    });
+
+                    facturaObj.setCurrentSublistValue({
+                        sublistId: "item",
+                        fieldId: "tax1amt",
+                        value: ivaGasto
+                    });
+
+                    facturaObj.setCurrentSublistValue({
+                        sublistId: "item",
+                        fieldId: "custcol_referencia_conauto",
+                        value: recerenciaCompleta
+                    });
+                    facturaObj.setCurrentSublistValue({
+                        sublistId: "item",
+                        fieldId: "cseg_folio_conauto",
+                        value: folioId
+                    });
+                    facturaObj.setCurrentSublistValue({
+                        sublistId: "item",
+                        fieldId: "cseg_grupo_conauto",
+                        value: grupoId
+                    });
+                    facturaObj.commitLine({
+                        sublistId: "item",
+                    })
+                    facturaId = facturaObj.save({
+                        ignoreMandatoryFields: true
+                    });
+
+                    conautoPreferences.setFolioConauto(facturaId);
+
+                    pagoObj.setValue({
+                        fieldId: "custrecord_conauto_fact_cob_rj",
+                        value: facturaId
+                    });
+                    pagoObj.save();
+                }
+            } catch (error) {
+                log.error('crearFacturaCobranzaRecibidaRJ', error);
+            }
+        }
+
 
         function addLineJournal(journal, account, isdebit, amount, data) {
             data = data || {};
