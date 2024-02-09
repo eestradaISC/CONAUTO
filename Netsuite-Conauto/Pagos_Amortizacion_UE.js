@@ -147,7 +147,7 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                 });
 
                 let date = newRecord.getValue({
-                    fieldId: "custrecord_imr_pa_fecha",
+                    fieldId: "custrecord_imr_pa_fecha_pago",
                 });
                 let recerencia = newRecord.getValue({
                     fieldId: "custrecord_imr_pa_referencia",
@@ -2275,12 +2275,10 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                 let idDiario = diarioObj.save({
                     ignoreMandatoryFields: true
                 });
-                log.audit("REFERENCIA", recerencia)
-                log.audit("ESTAADO", estado)
                 if (recerencia == "RI" && estado == '4') {
                     crearDiarioReclamacionSeguro(preferences, diarioNoIden, date, importe, folioText, folioId, grupoId, cliente, recerenciaCompleta, newRecord, integranteText, grupoText, pagoObj);
                 }
-                conautoPreferences.setFolioConauto(idDiario);
+
                 return idDiario;
             } catch (e) {
                 log.error('crearDiarioIndetificado', 'Linea 2289: ' + e);
