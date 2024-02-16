@@ -622,6 +622,18 @@ define(["N/record", "IMR/IMRSearch", "/SuiteScripts/Conauto_Preferences.js", "N/
                 fieldId: "amount",
                 value: importeGasto
             });
+
+            // Añadir aprobadores
+            facturaObj.setValue({
+                fieldId: "custbody_sig_aprobador_pedido",
+                value: 2950
+            });
+            facturaObj.setValue({
+                fieldId: "custbody_aprobador_pedido",
+                value: 2950
+            });
+            //---------------------
+
             facturaObj.setCurrentSublistValue({
                 sublistId: "expense",
                 fieldId: "taxcode",

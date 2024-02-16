@@ -145,6 +145,7 @@ define(['N/record', "/SuiteScripts/Conauto_Preferences.js", "IMR/IMRSearch", "N/
         const createVendorBill = (recordObj) => {
             let importeFactura = parseFloat(recordObj.getValue("custrecord_imr_pu_factura"));
             let importeCartaCredito = parseFloat(recordObj.getValue("custrecord_imr_pu_carta_credito"));
+            let importeTotal = parseFloat(recordObj.getValue("custrecord_imr_pu_total_pagar"))
             let importeDiferencia = parseFloat(recordObj.getValue("custrecord_imr_pu_dif_cc_vf"));
             let vendor = recordObj.getValue("custrecord_imr_pu_proveedor");
             let grupoText = recordObj.getText("custrecord_imr_pu_grupo");
@@ -207,10 +208,11 @@ define(['N/record', "/SuiteScripts/Conauto_Preferences.js", "IMR/IMRSearch", "N/
                 });
                 setDataLine(vendorBillObj, 'expense', [
                     { fieldId: "account", value: cuentaImporte },
-                    { fieldId: "amount", value: importeCartaCredito },
+                    { fieldId: "amount", value: importeTotal },
                     { fieldId: "taxcode", value: 5 },
                     { fieldId: "location", value: 6 },
                     { fieldId: "memo", value: memo },
+                    { fieldId: "class", value: 26 }
                 ]);
                 if (importeDiferencia) {
                     setDataLine(vendorBillObj, 'expense', [
@@ -219,6 +221,7 @@ define(['N/record', "/SuiteScripts/Conauto_Preferences.js", "IMR/IMRSearch", "N/
                         { fieldId: "taxcode", value: 5 },
                         { fieldId: "location", value: 6 },
                         { fieldId: "memo", value: memo },
+                        { fieldId: "class", value: 26 }
                     ]);
                 }
                 let vendorBillId = vendorBillObj.save({
