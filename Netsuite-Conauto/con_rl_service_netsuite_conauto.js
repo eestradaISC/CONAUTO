@@ -50,7 +50,7 @@ define([
                     'SolicitudPago': solicitudPago,
                     'PolizaIntegrantes': polizaIntegrantes,
                     'ActualizaContrato': actualizaContrato,
-                    // 'PagoUnidad': pagoUnidad,
+                    'PagoUnidad': pagoUnidad,
                     'InteresesMoratorios': interesesMoratorios,
                     'ReservaPasivo': reservaPasivo,
                     'Bajas': bajaFolio,

@@ -1047,7 +1047,7 @@ define([
                         if (errors.length == 0) {
                                 for (let payment of payments) {
                                         log.error("ENTRA PAYMENT", payment)
-                                        let folio = lib_conauto.recordFind("customrecord_cseg_folio_conauto", 'anyof', "externalid", payment.folio);
+                                        let folio = lib_conauto.recordFind("customrecord_cseg_folio_conauto", 'is', 'name', payment.folio);
                                         log.error("ENTRA PAYMENT", folio)
                                         if (!folio) continue;
                                         folios.push(folio);

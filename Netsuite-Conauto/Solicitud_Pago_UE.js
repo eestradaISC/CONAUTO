@@ -521,6 +521,12 @@ define(["N/record", "IMR/IMRSearch", "/SuiteScripts/Conauto_Preferences.js", "N/
             var grupo = recordObj.getValue({
                 fieldId: "custrecord_imr_solpa_grupo"
             });
+            var grupoTexto = recordObj.getText({
+                fieldId: "custrecord_imr_solpa_grupo"
+            });
+            var integrante = recordObj.getValue({
+                fieldId: "custrecord_imr_solpa_integrante"
+            });
             var nombre = recordObj.getValue({
                 fieldId: "custrecord_imr_solpa_nom_ben"
             });
@@ -559,8 +565,10 @@ define(["N/record", "IMR/IMRSearch", "/SuiteScripts/Conauto_Preferences.js", "N/
                 vatregnumber: rfc,
                 custentity_imr_llave_integracion: [rfc, nombre].join("_")
             });
-            var nota = "Provision por pago de unidad x siniestro de auto" + folio ? (" Folio: " + folio) : "";
-            var tranidnote = "Provision PDU x siniestro auto " + folio ? (folio) : ""
+            var folioForMemo = folio ? (" Folio:" + folio) : "";
+            var nota = "Pago de unidad de adjudicados por siniestro del grupo integrante" + grupoTexto + " - " + integrante + ", No. Folio " + folioForMemo + ", " + nombre;
+            // var nota = "Provision por pago de unidad x siniestro de auto" + folioForMemo;
+            var tranidnote = "Provision PDU x siniestro auto " + folioForMemo;
             var facturaObj = record.create({
                 type: record.Type.VENDOR_BILL,
                 isDynamic: true
@@ -572,10 +580,6 @@ define(["N/record", "IMR/IMRSearch", "/SuiteScripts/Conauto_Preferences.js", "N/
             facturaObj.setValue({
                 fieldId: "custbody_imr_tippolcon",
                 value: 3
-            });
-            facturaObj.setValue({
-                fieldId: "tranid",
-                value: tranidnote
             });
             facturaObj.setValue({
                 fieldId: "memo",
@@ -648,6 +652,21 @@ define(["N/record", "IMR/IMRSearch", "/SuiteScripts/Conauto_Preferences.js", "N/
                 sublistId: "expense",
                 fieldId: "location",
                 value: 6
+            });
+            facturaObj.setCurrentSublistValue({
+                sublistId: "expense",
+                fieldId: "department",
+                value: 34
+            });
+            facturaObj.setCurrentSublistValue({
+                sublistId: "expense",
+                fieldId: "class",
+                value: 6
+            });
+            facturaObj.setCurrentSublistValue({
+                sublistId: "expense",
+                fieldId: "customer",
+                value: 131103
             });
             facturaObj.commitLine({
                 sublistId: "expense"

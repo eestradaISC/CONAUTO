@@ -178,13 +178,27 @@ define(['N/record', "/SuiteScripts/Conauto_Preferences.js", "IMR/IMRSearch", "N/
                     value: vendor,
                 });
                 vendorBillObj.setValue({
+                    fieldId: "tranid",
+                    value: "Provision PDU x siniestro auto Folio:1143004"
+                });
+                vendorBillObj.setValue({
                     fieldId: "approvalstatus",
                     value: 2
                 });
                 vendorBillObj.setValue({
-                    fieldId: "tranid",
-                    value: numFactura,
+                    fieldId: "custbody_imr_tippolcon",
+                    value: 3
                 });
+                // Añadir aprobadores
+                vendorBillObj.setValue({
+                    fieldId: "custbody_sig_aprobador_pedido",
+                    value: 2950
+                });
+                vendorBillObj.setValue({
+                    fieldId: "custbody_aprobador_pedido",
+                    value: 2950
+                });
+                //---------------------
                 vendorBillObj.setValue({
                     fieldId: "memo",
                     value: memo,
@@ -227,13 +241,15 @@ define(['N/record', "/SuiteScripts/Conauto_Preferences.js", "IMR/IMRSearch", "N/
                 let vendorBillId = vendorBillObj.save({
                     ignoreMandatoryFields: true
                 });
+                conautoPreferences.setFolioConauto(vendorBillId);
                 recordObj.setValue({
                     fieldId: "custrecord_imr_pu_transaccion",
                     value: vendorBillId
                 })
                 recordObj.save({
                     ignoreMandatoryFields: true
-                })
+                });
+
             }
         }
         /***
