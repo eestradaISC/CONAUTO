@@ -152,11 +152,15 @@ define(['N/record', "/SuiteScripts/Conauto_Preferences.js", "IMR/IMRSearch", "N/
             let grupo = recordObj.getValue("custrecord_imr_pu_grupo");
             let folio = recordObj.getValue("custrecord_imr_pu_folio");
             let folioText = recordObj.getText("custrecord_imr_pu_folio");
+            let importeDefinitivo = (importeDiferencia > 0) ? importeCartaCredito : importeTotal;
             let integrante = recordObj.getText("custrecord_imr_pu_integrante");
             let numFactura = recordObj.getValue("custrecord_imr_pu_num_factura") || '';
             let memo = 'Provisión de Pago de unidad de adjudicados Folio ' + folioText + ' - Gpo ' + grupoText + ' - Int ' + integrante
             if (vendor && importeFactura) {
                 let preferences = conautoPreferences.get();
+                let subsidiary = preferences.getPreference({
+                    key: "SUBCONAUTO"
+                });
                 let cuentaPorPagar = preferences.getPreference({
                     key: "PU",
                     reference: "porPagar"
@@ -176,6 +180,10 @@ define(['N/record', "/SuiteScripts/Conauto_Preferences.js", "IMR/IMRSearch", "N/
                 vendorBillObj.setValue({
                     fieldId: "entity",
                     value: vendor,
+                });
+                vendorBillObj.setValue({
+                    fieldId: "subsidiary",
+                    value: subsidiary
                 });
                 vendorBillObj.setValue({
                     fieldId: "tranid",
@@ -222,7 +230,7 @@ define(['N/record', "/SuiteScripts/Conauto_Preferences.js", "IMR/IMRSearch", "N/
                 });
                 setDataLine(vendorBillObj, 'expense', [
                     { fieldId: "account", value: cuentaImporte },
-                    { fieldId: "amount", value: importeTotal },
+                    { fieldId: "amount", value: importeDefinitivo },
                     { fieldId: "taxcode", value: 5 },
                     { fieldId: "location", value: 6 },
                     { fieldId: "memo", value: memo },

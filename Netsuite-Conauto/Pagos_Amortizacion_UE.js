@@ -599,7 +599,6 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                     "seguroVida": "2",
                     "seguroAuto": "3",
                     "aportacion": "4",
-                    "saldoFavor": "5",
                 }
 
                 if (!journalCartera && total != 0 && estadoFolio == '4') {
@@ -653,6 +652,7 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                     });
                     for (let concepto in montosReparto) {
                         let monto = montosReparto[concepto];
+                        if (concepto == "saldoFavor") continue;
                         if (monto == 0) continue;
                         addLineJournal(diarioObj, cuentaDebito, false, monto, {
                             memo: memo,

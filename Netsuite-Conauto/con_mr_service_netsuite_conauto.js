@@ -1242,7 +1242,7 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
                         field: "referencia",
                         fieldRecord: "custrecord_imr_pa_referencia",
                         callback: function (value) {
-                            return "SA"
+                            return (value || '').substring(0, 2)
                         }
                     },
                     {
