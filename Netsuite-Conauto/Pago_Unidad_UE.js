@@ -234,7 +234,10 @@ define(['N/record', "/SuiteScripts/Conauto_Preferences.js", "IMR/IMRSearch", "N/
                     { fieldId: "taxcode", value: 5 },
                     { fieldId: "location", value: 6 },
                     { fieldId: "memo", value: memo },
-                    { fieldId: "class", value: 26 }
+                    { fieldId: "class", value: 26 },
+                    { fieldId: "cseg_folio_conauto", value: folio },
+                    { fieldId: "cseg_grupo_conauto", value: grupo },
+                    { fieldId: "custcol_imr_conauto_integrante", value: integrante },
                 ]);
                 if (importeDiferencia) {
                     setDataLine(vendorBillObj, 'expense', [
@@ -243,7 +246,10 @@ define(['N/record', "/SuiteScripts/Conauto_Preferences.js", "IMR/IMRSearch", "N/
                         { fieldId: "taxcode", value: 5 },
                         { fieldId: "location", value: 6 },
                         { fieldId: "memo", value: memo },
-                        { fieldId: "class", value: 26 }
+                        { fieldId: "class", value: 26 },
+                        { fieldId: "cseg_folio_conauto", value: folio },
+                        { fieldId: "cseg_grupo_conauto", value: grupo },
+                        { fieldId: "custcol_imr_conauto_integrante", value: integrante },
                     ]);
                 }
                 let vendorBillId = vendorBillObj.save({

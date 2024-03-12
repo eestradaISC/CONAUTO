@@ -61,6 +61,7 @@ define([
                     'ProvisionCartera': provisionCartera,
                     'CambiarEstatus': cambiarEstatus,
                     'ReclasificacionPrimeraCuota': reclasificacionPrimeraCuota,
+                    'CesionDerechos': cesionDerechos,
                 }
                 let callback = operations[data.tipo];
                 if (callback) {
@@ -889,6 +890,86 @@ define([
                     }
                 }
             }
+        }
+
+        /**
+        * @param {Object} data
+        * @param {String} data.idNotificacion 
+        * @param {String} data.tipo  tipo de request
+        * @param {String} data.folio  folio a sustituir
+        * @param {String} data.folioSustitucion  nuevo folio
+        * @param {Object} data.datosFolio Objeto que contiene todos los datos a actualizar del nuevo folio 
+        * @param {String} data.datosFolio.integrante  numero de integrante
+        * @param {String} data.datosFolio.bid  Id de progress del proveedor
+        * @param {String} data.datosFolio.distribuidora  nombre de la distribuidora del contrato
+        * @param {String} data.datosFolio.catalogoAuto  nombre del catalogo del auto
+        * @param {String} data.datosFolio.descripcionAuto  descripcion del catalogo del auto
+        * @param {String} data.datosFolio.precio  precio del auto
+        * @param {String} data.datosFolio.lista  numero de lista del auto
+        * @param {String} data.datosFolio.fechaContrato  fecha del contrato
+        * @param {String} data.datosFolio.uso  descripcion del uso
+        * @param {String} data.datosFolio.rfcVendedor  rfc del Vendedor
+        * @param {String} data.datosFolio.nombreVendedor  nombre del vendedor
+        * @param {String} data.datosFolio.vendor vendedor
+        * @param {String} data.datosFolio.fechaRecepcion  fecha de la recepcion
+        * @param {String} data.datosFolio.beneficiario  beneficiario
+        * @param {String} data.datosFolio.tipoPago  Tipo de pago
+        * @param {String} data.datosFolio.pagoCon
+        * @param {String} data.datosFolio.pagoBoleta pago de la boleta
+        * @param {String} data.datosFolio.pda
+        * @param {String} data.datosFolio.fechaPago fecha del pago
+        * @param {String} data.datosFolio.estado  id del estado del folio
+        * @param {String} data.datosFolio.subestado  id del subestado del folio
+        * @param {String} data.datosFolio.fechaCesion  fecha de la cesion
+        * @param {String} data.datosFolio.mesCesion  mes de la cesion
+        * @param {Object} data.datosFolio.importe  
+        * @param {Object} data.datosFolio.banco 
+        * @param {Object} data.datosFolio.totalPagado 
+        * @param {Object} data.datosFolio.cliente  datos del cliente
+        * @param {boolean} data.datosFolio.cliente.esPersona  indica si es persona o empresa
+        * @param {String} data.datosFolio.cliente.nombre  nombre del cliente
+        * @param {String} data.datosFolio.cliente.apellidoPaterno apellido paterno del cliente en caso de ser persona
+        * @param {String} data.datosFolio.cliente.apellidoMaterno apellido materno del cliente en caso de ser persona
+        * @param {String} data.datosFolio.cliente.rfc rfc del cliente
+        * @param {String} data.datosFolio.cliente.sexo sexo del cliente
+        * @param {String} data.datosFolio.cliente.fechaNacimiento fecha de nacimiento
+        * @param {String} data.datosFolio.cliente.curp curp del cliente
+        * @param {String} data.datosFolio.cliente.estadoCivil estado civil del cliente
+        * @param {String} data.datosFolio.cliente.telefono
+        * @param {String} data.datosFolio.cliente.telefonoCasa
+        * @param {String} data.datosFolio.cliente.celular
+        * @param {String} data.datosFolio.cliente.correo
+        * @param {String} data.datosFolio.cliente.rf-clave
+        * @param {String} data.datosFolio.cliente.razon
+        * @param {Object} data.datosFolio.cliente.direccion datos de la dirección
+        * @param {Object} data.datosFolio.cliente.direccion.calle
+        * @param {Object} data.datosFolio.cliente.direccion.numero
+        * @param {Object} data.datosFolio.cliente.direccion.colonia
+        * @param {Object} data.datosFolio.cliente.direccion.ciudad
+        * @param {Object} data.datosFolio.cliente.direccion.estado
+        * @param {Object} data.datosFolio.cliente.direccion.cp
+        * @param {Object} data.datosFolio.cliente.direccion.municipio
+        * @param {Object} data.datosFolio.grupo datos del grupo
+        * @param {Object} data.datosFolio.grupo.id identificador del grupo llave unicia
+        * @param {Object} data.datosFolio.grupo.nombre nombre para mostrar
+        * @param {Object} data.datosFolio.grupo.tipo 
+        * @param {Object} data.datosFolio.grupo.clavePlan
+        * @param {Object} data.datosFolio.grupo.descripcionPlan
+        * @param {Object} data.datosFolio.grupo.factorIntegrante
+        * @param {Object} data.datosFolio.grupo.factorAdjudicado
+        * @param {Object} data.datosFolio.grupo.plazo
+        * @param {Object} data.datosFolio.grupo.inicioVigencia
+        * @param {Object} data.datosFolio.grupo.finVigencia
+        * @param {Object} data.datosFolio.grupo.clavePromocion
+        * @param {Object} data.datosFolio.grupo.descripcionPromocion
+        * @param {Object} response
+        * @param {Number} response.code
+        * @param {Array}  response.info
+        * 
+        * 
+        */
+        function cesionDerechos(data, response) {
+
         }
 
 
