@@ -358,7 +358,7 @@ define(["N/record", "N/file", "/SuiteScripts/Conauto_Preferences.js", "IMR/IMRSe
         handler.createInvoice = (payment, preferences, transactions) => {
             try {
                 log.error("createInvoice")
-                let fechaCobranza = new Date();
+                let fechaCobranza = handler.stringToDateConauto(payment.fecha)
 
                 let referenciaCompleta = payment.referencia;
                 let cliente = payment.cliente;

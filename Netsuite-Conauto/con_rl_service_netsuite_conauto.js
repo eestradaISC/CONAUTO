@@ -965,11 +965,87 @@ define([
         * @param {Object} response
         * @param {Number} response.code
         * @param {Array}  response.info
-        * 
-        * 
         */
         function cesionDerechos(data, response) {
+            let logId = null;
+            logId = createLog(data, response);
+            response.logId = logId;
+            try {
+                if (data.idNotificacion.length > 0) {
+                    let folioId = recordFind('customrecord_cseg_folio_conauto', 'anyof', 'externalid', data.folio);
+                    let folio2Id = recordFind('customrecord_cseg_folio_conauto', 'is', 'name', data.folio);
 
+                    if (folioId || folio2Id) {
+                        let folioSustitucion = recordFind('customrecord_cseg_folio_conauto', 'is', 'custrecord_folio_sustitucion', data.folio);
+                        if (!folioSustitucion) {
+                            if (data.datosFolio.pagoCon && ['1', '2'].indexOf(data.datosFolio.pagoCon + '') == -1) {
+                                response.code = 400;
+                                response.info.push('ID DE pagoCon NO VÁLIDO: ' + data.datosFolio.pagoCon);
+                            }
+                            if (data.datosFolio.estado && ['1', '2', '3', '4'].indexOf(data.datosFolio.estado + '') == -1) {
+                                response.code = 400;
+                                response.info.push('ID DE estatus NO VÁLIDO: ' + data.datosFolio.estado);
+                            }
+                            if (data.datosFolio.subestado && ['1', '2', '3', '4', '5', '6', '7', '8', ''].indexOf(data.datosFolio.subestado + '') == -1) {
+                                response.code = 400;
+                                response.info.push('ID DE sub estatus NO VÁLIDO: ' + data.datosFolio.subestado);
+                            }
+                            checkMandatoryFieldsDate(data, ['fechaContrato', 'fechaRecepcion'], response);
+                            if (data.datosFolio.cliente && !util.isObject(data.datosFolio.cliente)) {
+                                response.code = 400;
+                                response.info.push('ESTRUCTURA NODO cliente INCORRECTA');
+                            } else if (data.datosFolio.cliente) {
+                                let mandatoryFieldsCliente = ['nombre', 'rfc'];
+                                if (data.datosFolio.cliente.esPersona) {
+                                    mandatoryFieldsCliente.push('apellidoPaterno');
+                                    // mandatoryFieldsCliente.push('apellidoMaterno');
+                                }
+                                checkMandatoryFieldsDate(data.datosFolio.cliente, ['fechaNacimiento'], response);
+                                checkMandatoryFields(data.datosFolio.cliente, mandatoryFieldsCliente, response);
+                                if (Object.getOwnPropertyNames(data.datosFolio.cliente).indexOf('esPersona') != -1 && !util.isBoolean(data.datosFolio.cliente.esPersona)) {
+                                    response.code = 400;
+                                    response.info.push('CAMPO esPersona NO ES VALOR BOOLEANO');
+                                }
+                                if (Object.getOwnPropertyNames(data.datosFolio.cliente).indexOf('sexo') != -1 && !util.isBoolean(data.datosFolio.cliente.sexo)) {
+                                    response.code = 400;
+                                    response.info.push('CAMPO sexo NO ES VALOR BOOLEANO');
+                                }
+                                if (data.datosFolio.cliente.direccion && !util.isObject(data.datosFolio.cliente.direccion)) {
+                                    response.code = 400;
+                                    response.info.push('ESTRUCTURA NODO direccion INCORRECTA');
+                                } else if (data.datosFolio.cliente.direccion) {
+                                    let mandatoryFieldsDireccion = ['calle', 'colonia', 'estado', 'cp'];
+                                    checkMandatoryFields(data.datosFolio.cliente.direccion, mandatoryFieldsDireccion, response);
+                                }
+                            }
+                            if (data.datosFolio.grupo && !util.isObject(data.datosFolio.grupo)) {
+                                response.code = 400;
+                                response.info.push('ESTRUCTURA NODO grupo INCORRECTA');
+                            } else if (data.datosFolio.grupo) {
+                                let mandatoryFieldsGrupo = ['id', 'nombre'];
+                                checkMandatoryFields(data.datosFolio.grupo, mandatoryFieldsGrupo, response);
+                                checkMandatoryFieldsDate(data.datosFolio.grupo, ['finVigencia'], response);
+                            }
+                        } else {
+                            response.code = 400;
+                            response.info.push('ESTA INTENTANDO OPERAR CON UN FOLIO YA SUSTITUIDO PREVIAMENTE, VERIFICA EL REGISTRO DEL FOLIO');
+                            handlerErrorLogRequest('ESTA INTENTANDO OPERAR CON UN FOLIO YA SUSTITUIDO PREVIAMENTE, VERIFICA EL REGISTRO DEL FOLIO', logId);
+                        }
+                    } else {
+                        response.code = 400;
+                        response.info.push('ESTA INTENTANDO OPERAR CON UN FOLIO NO EXISTENTE, VERIFICA EL REGISTRO DEL FOLIO');
+                        handlerErrorLogRequest('ESTA INTENTANDO OPERAR CON UN FOLIO NO EXISTENTE, VERIFICA EL REGISTRO DEL FOLIO', logId);
+                    }
+                } else {
+                    response.code = 400;
+                    response.info.push('NO SE ENCONTRÓ VALOR PARA ID NOTIFICACIÓN');
+                    handlerErrorLogRequest('NO SE ENCONTRÓ VALOR PARA ID NOTIFICACIÓN', logId);
+                }
+            } catch (error) {
+                response.code = 500;
+                response.info.push('ERROR CREATE LOG REQUEST: ' + e.message.toString());
+                handlerErrorLogRequest('ERROR CREATE LOG REQUEST: ' + e.message.toString(), logId);
+            }
         }
 
 

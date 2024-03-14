@@ -58,6 +58,7 @@ define([
 
                                 let operations = {
                                         'ActualizaContrato': actualizaContrato,
+                                        'CesionDerechos': cesionDerechos,
                                         'InteresesMoratorios': interesesMoratorios,
                                         'PolizaIntegrantes': polizaIntegrantes,
                                         'ReservaPasivo': reservaPasivo, // Poliza de Adjudicados
@@ -192,6 +193,525 @@ define([
                                         type: recordType,
                                         id: folioId,
                                         isDynamic: true
+                                });
+
+                                if (recordObj.getValue('custrecord_folio_estado') == 1) { // Es el estado de solicitante
+                                        lib_conauto.setOpcionalData(recordObj, 2, 'custrecord_folio_estado'); // 2 Es el estado de Integrante
+                                }
+                                lib_conauto.setOpcionalData(recordObj, data.subestado, 'custrecord_folio_subestatus');
+                                if (data.folioSustitucion) {
+                                        data.folioSustitucion = lib_conauto.recordFind(recordType, 'anyof', 'externalid', data.folioSustitucion);
+                                }
+                                let mapsFieldsFolio = [
+                                        {
+                                                'field': 'folioSustitucion',
+                                                'fieldRecord': 'custrecord_folio_sustitucion',
+                                                'type': 'text'
+                                        },
+                                        {
+                                                'field': 'bid',
+                                                'fieldRecord': 'custrecord_imr_bid_conauto',
+                                                'type': 'number'
+                                        },
+                                        {
+                                                'field': 'distribuidora',
+                                                'fieldRecord': 'custrecord_imr_distribuidora_conauto',
+                                                'type': 'text'
+                                        },
+                                        {
+                                                'field': 'catalogoAuto',
+                                                'fieldRecord': 'custrecord_imr_catalogoauto_conauto',
+                                                'type': 'text'
+                                        },
+                                        {
+                                                'field': 'descripcionAuto',
+                                                'fieldRecord': 'custrecord_imr_descripauto_conauto',
+                                                'type': 'text'
+                                        },
+                                        {
+                                                'field': 'precio',
+                                                'fieldRecord': 'custrecord_imr_precio_conauto',
+                                                'type': 'number'
+                                        },
+                                        {
+                                                'field': 'lista',
+                                                'fieldRecord': 'custrecord_imr_lista_conauto',
+                                                'type': 'number'
+                                        },
+                                        {
+                                                'field': 'fechaContrato',
+                                                'fieldRecord': 'custrecord_imr_fechacontrato_conauto',
+                                                'type': 'date'
+                                        },
+                                        {
+                                                'field': 'uso',
+                                                'fieldRecord': 'custrecordimr_uso_conauto',
+                                                'type': 'text'
+                                        },
+                                        {
+                                                'field': 'rfcVendedor',
+                                                'fieldRecord': 'custrecord_imr_rfcvendedor_conauto',
+                                                'type': 'text'
+                                        },
+                                        {
+                                                'field': 'vendedor',
+                                                'fieldRecord': 'custrecord_imr_nombrevende_conauto',
+                                                'type': 'text'
+                                        },
+                                        {
+                                                'field': 'fechaRecepcion',
+                                                'fieldRecord': 'custrecord_imr_fecharecep_conauto',
+                                                'type': 'date'
+                                        },
+                                        {
+                                                'field': 'beneficiario',
+                                                'fieldRecord': 'custrecord_imr_beneficiario_conauto',
+                                                'type': 'text'
+                                        },
+                                        {
+                                                'field': 'tipoPago',
+                                                'fieldRecord': 'custrecord_imr_tipopago_conauto',
+                                                'type': 'text'
+                                        },
+                                        {
+                                                'field': 'pagoCon',
+                                                'fieldRecord': 'custrecord_imr_pagocon_conauto',
+                                                'type': 'text'
+                                        },
+                                        {
+                                                'field': 'pagoBoleta',
+                                                'fieldRecord': 'custrecord_imr_pagoconboleta_conauto',
+                                                'type': 'text'
+                                        },
+                                        {
+                                                'field': 'pda',
+                                                'fieldRecord': 'custrecord_imr_pda_conauto',
+                                                'type': 'text'
+                                        },
+                                        {
+                                                'field': 'fechaPago',
+                                                'fieldRecord': 'custrecord_imr_fechapagoinicialfolio_con',
+                                                'type': 'date'
+                                        },
+                                        {
+                                                'field': 'importe',
+                                                'fieldRecord': 'custrecord_imr_importe_conauto',
+                                                'type': 'number'
+                                        },
+                                        {
+                                                'field': 'banco',
+                                                'fieldRecord': 'custrecord_imr_banco_conauto',
+                                                'type': 'text'
+                                        },
+                                        {
+                                                'field': 'totalPagado',
+                                                'fieldRecord': 'custrecord_imr_totalpagado_conauto',
+                                                'type': 'number'
+                                        },
+                                        {
+                                                'field': 'integrante',
+                                                'fieldRecord': 'custrecord_imr_integrante_conauto',
+                                                'type': 'text'
+                                        }
+                                ]
+                                lib_conauto.setDataRecord(mapsFieldsFolio, data, recordObj);
+                                if (data.cliente) {
+                                        let customerId = lib_conauto.recordFind('customer', 'is', 'custentity_imr_rfc_operacion', data.cliente.rfc);
+                                        let customerObj = null;
+                                        let preferences = conautoPreferences.get();
+                                        log.debug('customerId', customerId);
+                                        if (customerId) {
+                                                customerObj = record.load({
+                                                        type: 'customer',
+                                                        id: customerId,
+                                                        isDynamic: true
+                                                })
+                                        } else {
+                                                customerObj = record.create({
+                                                        type: 'customer',
+                                                        isDynamic: true
+                                                });
+                                                let subsidiary = preferences.getPreference({
+                                                        key: 'SUBCONAUTO'
+                                                });
+                                                customerObj.setValue({
+                                                        fieldId: 'subsidiary',
+                                                        value: subsidiary
+                                                });
+                                        }
+                                        if (data.cliente.esPersona) {
+                                                customerObj.setValue({
+                                                        fieldId: 'isperson',
+                                                        value: 'T'
+                                                });
+                                                customerObj.setValue({
+                                                        fieldId: 'firstname',
+                                                        value: data.cliente.nombre
+                                                });
+                                                customerObj.setValue({
+                                                        fieldId: 'lastname',
+                                                        value: (data.cliente.apellidoMaterno) ? `${data.cliente.apellidoPaterno} ${data.cliente.apellidoMaterno}` : data.cliente.apellidoPaterno
+                                                });
+                                        } else {
+                                                customerObj.setValue({
+                                                        fieldId: 'isperson',
+                                                        value: 'F'
+                                                });
+                                                customerObj.setValue({
+                                                        fieldId: 'companyname',
+                                                        value: data.cliente.nombre
+                                                });
+                                        }
+                                        customerObj.setValue({
+                                                fieldId: "custentity_publico_geeneral",
+                                                value: false,
+                                                ignoreFieldChange: true
+                                        });
+
+                                        let mapsFieldsClient = [
+                                                {
+                                                        'field': 'rfc',
+                                                        'fieldRecord': 'custentity_imr_rfc_operacion',
+                                                        'type': 'text'
+                                                },
+                                                {
+                                                        'field': 'razon',
+                                                        'fieldRecord': 'custentity_razon_social',
+                                                        'type': 'text'
+                                                },
+                                                {
+                                                        'field': 'rf-clave',
+                                                        'fieldRecord': 'custentity_imr_fe40_regimenfiscal',
+                                                        'type': 'text'
+                                                },
+                                                {
+                                                        'field': 'usoCfdi',
+                                                        'fieldRecord': 'custentity_uso_cfdi',
+                                                        'type': 'text'
+                                                },
+                                                {
+                                                        'field': 'tipo',
+                                                        'fieldRecord': 'custentity_imr_tipocliente',
+                                                        'type': 'boolean'
+                                                },
+                                                {
+                                                        'field': 'sexo',
+                                                        'fieldRecord': 'custentity_imr_sexoconauto',
+                                                        'type': 'boolean'
+                                                },
+                                                {
+                                                        'field': 'fechaNacimiento',
+                                                        'fieldRecord': 'custentity_imr_fechanacconauto',
+                                                        'type': 'date'
+                                                },
+                                                {
+                                                        'field': 'curp',
+                                                        'fieldRecord': 'custentity_imr_curpconauto',
+                                                        'type': 'text'
+                                                },
+                                                {
+                                                        'field': 'estadoCivil',
+                                                        'fieldRecord': 'custentity_imr_edocivilconauto',
+                                                        'type': 'text'
+                                                },
+                                                {
+                                                        'field': 'telefono',
+                                                        'fieldRecord': 'phone',
+                                                        'type': 'text'
+                                                },
+                                                {
+                                                        'field': 'telefonoCasa',
+                                                        'fieldRecord': 'altphone',
+                                                        'type': 'text'
+                                                },
+                                                {
+                                                        'field': 'celular',
+                                                        'fieldRecord': 'mobilephone',
+                                                        'type': 'text'
+                                                },
+                                                {
+                                                        'field': 'correo',
+                                                        'fieldRecord': 'email',
+                                                        'type': 'text'
+                                                }
+                                        ]
+                                        let listCfdis = lib_conauto.getCFDIs();
+                                        data.cliente.usoCfdi = listCfdis[data.cliente.usoCfdi];
+                                        data.cliente.correo = data.cliente.correo.replace("Ñ", "L");
+                                        lib_conauto.setDataRecord(mapsFieldsClient, data.cliente, customerObj);
+                                        customerObj.setValue({
+                                                fieldId: 'vatregnumber',
+                                                value: data.cliente.rfc
+                                        }); //L.R.M.R. 29/09/2021
+                                        if (data.cliente.direccion) {
+                                                let countLine = customerObj.getLineCount({
+                                                        sublistId: 'addressbook'
+                                                });
+                                                log.error({
+                                                        title: 'countLine',
+                                                        details: countLine
+                                                });
+                                                if (countLine == 0) {
+                                                        customerObj.selectNewLine({
+                                                                sublistId: 'addressbook'
+                                                        });
+                                                } else {
+                                                        customerObj.selectLine({
+                                                                sublistId: 'addressbook',
+                                                                line: 1
+                                                        })
+                                                }
+                                                customerObj.setCurrentSublistValue({
+                                                        sublistId: 'addressbook',
+                                                        fieldId: 'defaultshipping',
+                                                        value: true
+                                                });
+                                                customerObj.setCurrentSublistValue({
+                                                        sublistId: 'addressbook',
+                                                        fieldId: 'defaultbilling',
+                                                        value: true
+                                                });
+                                                let addressObj = customerObj.getCurrentSublistSubrecord({
+                                                        sublistId: 'addressbook',
+                                                        fieldId: 'addressbookaddress'
+                                                });
+                                                addressObj.setValue({
+                                                        fieldId: 'country',
+                                                        value: 'MX'
+                                                });
+                                                addressObj.setValue({
+                                                        fieldId: 'addr1',
+                                                        value: data.cliente.direccion.calle
+                                                });
+                                                addressObj.setValue({
+                                                        fieldId: 'addr2',
+                                                        value: data.cliente.direccion.colonia
+                                                });
+                                                addressObj.setValue({
+                                                        fieldId: 'addr3',
+                                                        value: data.cliente.direccion.municipio || ''
+                                                });
+                                                addressObj.setValue({
+                                                        fieldId: 'state',
+                                                        value: data.cliente.direccion.estado
+                                                });
+                                                addressObj.setValue({
+                                                        fieldId: 'city',
+                                                        value: data.cliente.direccion.ciudad
+                                                });
+                                                addressObj.setValue({
+                                                        fieldId: 'zip',
+                                                        value: data.cliente.direccion.cp
+                                                });
+                                                customerObj.commitLine({
+                                                        sublistId: 'addressbook'
+                                                });
+                                        }
+                                        customerId = customerObj.save({
+                                                ignoreMandatoryFields: true
+                                        });
+                                        recordObj.setValue({
+                                                fieldId: 'custrecord_cliente_integrante',
+                                                value: customerId
+                                        });
+                                }
+                                if (data.grupo) {
+                                        let grupoId = lib_conauto.recordFind('customrecord_cseg_grupo_conauto', 'anyof', 'externalid', data.grupo.id);
+                                        if (grupoId === '' || grupoId === null) {
+                                                grupoId = lib_conauto.recordFind('customrecord_cseg_grupo_conauto', 'is', 'name', data.grupo.nombre);
+                                        }
+                                        let grupoObj = null;
+                                        log.debug('grupoId', grupoId);
+                                        if (grupoId) {
+                                                grupoObj = record.load({
+                                                        type: 'customrecord_cseg_grupo_conauto',
+                                                        id: grupoId,
+                                                        isDynamic: true
+                                                })
+                                        } else {
+                                                grupoObj = record.create({
+                                                        type: 'customrecord_cseg_grupo_conauto',
+                                                        isDynamic: true
+                                                });
+                                                grupoObj.setValue({
+                                                        fieldId: 'externalid',
+                                                        value: data.grupo.id
+                                                });
+                                        }
+                                        let mapsFieldGrupo = [
+                                                {
+                                                        'field': 'nombre',
+                                                        'fieldRecord': 'name',
+                                                        'type': 'text'
+                                                },
+                                                {
+                                                        'field': 'tipo',
+                                                        'fieldRecord': 'custrecord_imr_tipoplan_conauto',
+                                                        'type': 'text'
+                                                },
+                                                {
+                                                        'field': 'clavePlan',
+                                                        'fieldRecord': 'custrecord_imr_claveplan_conauto',
+                                                        'type': 'text'
+                                                },
+                                                {
+                                                        'field': 'descripcionPlan',
+                                                        'fieldRecord': 'custrecord_imr_descipplan_conauto',
+                                                        'type': 'text'
+                                                },
+                                                {
+                                                        'field': 'factorIntegrante',
+                                                        'fieldRecord': 'custrecord_imr_factorint_conauto',
+                                                        'type': 'text'
+                                                },
+                                                {
+                                                        'field': 'factorAdjudicado',
+                                                        'fieldRecord': 'custrecord_imr_factoradju_conauto',
+                                                        'type': 'text'
+                                                },
+                                                {
+                                                        'field': 'plazo',
+                                                        'fieldRecord': 'custrecord_imr_plazo_conauto',
+                                                        'type': 'text'
+                                                },
+                                                {
+                                                        'field': 'incioVigencia',
+                                                        'fieldRecord': 'custrecord_imr_inivig_conauto',
+                                                        'type': 'date'
+                                                },
+                                                {
+                                                        'field': 'finVigencia',
+                                                        'fieldRecord': 'custrecord_imr_finvig_conauto',
+                                                        'type': 'date'
+                                                },
+                                                {
+                                                        'field': 'clavePromocion',
+                                                        'fieldRecord': 'custrecord_imr_clavepromo_conauto',
+                                                        'type': 'text'
+                                                },
+                                                {
+                                                        'field': 'descripcionPromocion',
+                                                        'fieldRecord': 'custrecord_imr_descpromo_conauto',
+                                                        'type': 'text'
+                                                }
+                                        ];
+                                        lib_conauto.setDataRecord(mapsFieldGrupo, data.grupo, grupoObj);
+                                        grupoId = grupoObj.save({
+                                                ignoreMandatoryFields: true
+                                        });
+                                        recordObj.setValue({
+                                                fieldId: 'custrecord_grupo',
+                                                value: grupoId
+                                        })
+                                }
+                                folioId = recordObj.save({
+                                        ignoreMandatoryFields: true
+                                });
+                        }
+                        return {
+                                recordType: recordType,
+                                transactions: [],
+                                records: [folioId],
+                                solPagos: [],
+                                folios: [folioId]
+                        };
+                }
+
+
+                /**
+                * @param {Object} data
+                * @param {String} data.idNotificacion 
+                * @param {String} data.tipo  tipo de request
+                * @param {String} data.folio  folio a sustituir
+                * @param {String} data.folioSustitucion  nuevo folio
+                * @param {Object} data.datosFolio Objeto que contiene todos los datos a actualizar del nuevo folio 
+                * @param {String} data.datosFolio.integrante  numero de integrante
+                * @param {String} data.datosFolio.bid  Id de progress del proveedor
+                * @param {String} data.datosFolio.distribuidora  nombre de la distribuidora del contrato
+                * @param {String} data.datosFolio.catalogoAuto  nombre del catalogo del auto
+                * @param {String} data.datosFolio.descripcionAuto  descripcion del catalogo del auto
+                * @param {String} data.datosFolio.precio  precio del auto
+                * @param {String} data.datosFolio.lista  numero de lista del auto
+                * @param {String} data.datosFolio.fechaContrato  fecha del contrato
+                * @param {String} data.datosFolio.uso  descripcion del uso
+                * @param {String} data.datosFolio.rfcVendedor  rfc del Vendedor
+                * @param {String} data.datosFolio.nombreVendedor  nombre del vendedor
+                * @param {String} data.datosFolio.vendor vendedor
+                * @param {String} data.datosFolio.fechaRecepcion  fecha de la recepcion
+                * @param {String} data.datosFolio.beneficiario  beneficiario
+                * @param {String} data.datosFolio.tipoPago  Tipo de pago
+                * @param {String} data.datosFolio.pagoCon
+                * @param {String} data.datosFolio.pagoBoleta pago de la boleta
+                * @param {String} data.datosFolio.pda
+                * @param {String} data.datosFolio.fechaPago fecha del pago
+                * @param {String} data.datosFolio.estado  id del estado del folio
+                * @param {String} data.datosFolio.subestado  id del subestado del folio
+                * @param {String} data.datosFolio.fechaCesion  fecha de la cesion
+                * @param {String} data.datosFolio.mesCesion  mes de la cesion
+                * @param {Object} data.datosFolio.importe  
+                * @param {Object} data.datosFolio.banco 
+                * @param {Object} data.datosFolio.totalPagado 
+                * @param {Object} data.datosFolio.cliente  datos del cliente
+                * @param {boolean} data.datosFolio.cliente.esPersona  indica si es persona o empresa
+                * @param {String} data.datosFolio.cliente.nombre  nombre del cliente
+                * @param {String} data.datosFolio.cliente.apellidoPaterno apellido paterno del cliente en caso de ser persona
+                * @param {String} data.datosFolio.cliente.apellidoMaterno apellido materno del cliente en caso de ser persona
+                * @param {String} data.datosFolio.cliente.rfc rfc del cliente
+                * @param {String} data.datosFolio.cliente.sexo sexo del cliente
+                * @param {String} data.datosFolio.cliente.fechaNacimiento fecha de nacimiento
+                * @param {String} data.datosFolio.cliente.curp curp del cliente
+                * @param {String} data.datosFolio.cliente.estadoCivil estado civil del cliente
+                * @param {String} data.datosFolio.cliente.telefono
+                * @param {String} data.datosFolio.cliente.telefonoCasa
+                * @param {String} data.datosFolio.cliente.celular
+                * @param {String} data.datosFolio.cliente.correo
+                * @param {String} data.datosFolio.cliente.rf-clave
+                * @param {String} data.datosFolio.cliente.razon
+                * @param {Object} data.datosFolio.cliente.direccion datos de la dirección
+                * @param {Object} data.datosFolio.cliente.direccion.calle
+                * @param {Object} data.datosFolio.cliente.direccion.numero
+                * @param {Object} data.datosFolio.cliente.direccion.colonia
+                * @param {Object} data.datosFolio.cliente.direccion.ciudad
+                * @param {Object} data.datosFolio.cliente.direccion.estado
+                * @param {Object} data.datosFolio.cliente.direccion.cp
+                * @param {Object} data.datosFolio.cliente.direccion.municipio
+                * @param {Object} data.datosFolio.grupo datos del grupo
+                * @param {Object} data.datosFolio.grupo.id identificador del grupo llave unicia
+                * @param {Object} data.datosFolio.grupo.nombre nombre para mostrar
+                * @param {Object} data.datosFolio.grupo.tipo 
+                * @param {Object} data.datosFolio.grupo.clavePlan
+                * @param {Object} data.datosFolio.grupo.descripcionPlan
+                * @param {Object} data.datosFolio.grupo.factorIntegrante
+                * @param {Object} data.datosFolio.grupo.factorAdjudicado
+                * @param {Object} data.datosFolio.grupo.plazo
+                * @param {Object} data.datosFolio.grupo.inicioVigencia
+                * @param {Object} data.datosFolio.grupo.finVigencia
+                * @param {Object} data.datosFolio.grupo.clavePromocion
+                * @param {Object} data.datosFolio.grupo.descripcionPromocion
+                * @param {Object} response
+                * @param {Number} response.code
+                * @param {Array}  response.info
+                */
+                function cesionDerechos(data, response) {
+                        let recordType = 'customrecord_cseg_folio_conauto';
+                        let folioId = lib_conauto.recordFind(recordType, 'anyof', 'externalid', data.folio);
+                        if (!folioId) {
+                                folioId = lib_conauto.recordFind('customrecord_cseg_folio_conauto', 'is', 'name', data.folio);
+                        }
+                        if (folioId) {
+                                let folioSustitucion = recordFind('customrecord_cseg_folio_conauto', 'is', 'custrecord_folio_sustitucion', data.folioSustitucion);
+
+                                let recordObj = (folioSustitucion) ? record.load({
+                                        type: recordType,
+                                        id: folioId,
+                                        isDynamic: true
+                                }) : record.create({
+                                        type: recordType,
+                                        isDynamic: true,
+                                        defaultValues: {
+                                                externalid: data.folioSustitucion,
+                                                name: data.folioSustitucion
+                                        }
                                 });
 
                                 if (recordObj.getValue('custrecord_folio_estado') == 1) { // Es el estado de solicitante
