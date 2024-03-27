@@ -90,6 +90,16 @@ define([
                             });
                             taskServiceAC.submit();
                             break;
+                        case 'CesionDerechos':
+                            let taskServiceCD = task.create({
+                                taskType: task.TaskType.SCHEDULED_SCRIPT,
+                                scriptId: 'customscript_con_sc_service_ns_conauto',
+                                params: {
+                                    custscript_log_service_id: logId
+                                }
+                            });
+                            taskServiceCD.submit();
+                            break;
                         case 'InteresesMoratorios':
                             let taskServiceIM = task.create({
                                 taskType: task.TaskType.SCHEDULED_SCRIPT,

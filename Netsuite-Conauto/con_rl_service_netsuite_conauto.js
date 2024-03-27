@@ -910,7 +910,7 @@ define([
         * @param {String} data.datosFolio.uso  descripcion del uso
         * @param {String} data.datosFolio.rfcVendedor  rfc del Vendedor
         * @param {String} data.datosFolio.nombreVendedor  nombre del vendedor
-        * @param {String} data.datosFolio.vendor vendedor
+        * @param {String} data.datosFolio.vendedor vendedor
         * @param {String} data.datosFolio.fechaRecepcion  fecha de la recepcion
         * @param {String} data.datosFolio.beneficiario  beneficiario
         * @param {String} data.datosFolio.tipoPago  Tipo de pago
@@ -941,6 +941,7 @@ define([
         * @param {String} data.datosFolio.cliente.correo
         * @param {String} data.datosFolio.cliente.rf-clave
         * @param {String} data.datosFolio.cliente.razon
+        * @param {String} data.datosFolio.cliente.usoCfdi
         * @param {Object} data.datosFolio.cliente.direccion datos de la dirección
         * @param {Object} data.datosFolio.cliente.direccion.calle
         * @param {Object} data.datosFolio.cliente.direccion.numero
@@ -978,54 +979,63 @@ define([
                     if (folioId || folio2Id) {
                         let folioSustitucion = recordFind('customrecord_cseg_folio_conauto', 'is', 'custrecord_folio_sustitucion', data.folio);
                         if (!folioSustitucion) {
-                            if (data.datosFolio.pagoCon && ['1', '2'].indexOf(data.datosFolio.pagoCon + '') == -1) {
-                                response.code = 400;
-                                response.info.push('ID DE pagoCon NO VÁLIDO: ' + data.datosFolio.pagoCon);
-                            }
-                            if (data.datosFolio.estado && ['1', '2', '3', '4'].indexOf(data.datosFolio.estado + '') == -1) {
-                                response.code = 400;
-                                response.info.push('ID DE estatus NO VÁLIDO: ' + data.datosFolio.estado);
-                            }
-                            if (data.datosFolio.subestado && ['1', '2', '3', '4', '5', '6', '7', '8', ''].indexOf(data.datosFolio.subestado + '') == -1) {
-                                response.code = 400;
-                                response.info.push('ID DE sub estatus NO VÁLIDO: ' + data.datosFolio.subestado);
-                            }
-                            checkMandatoryFieldsDate(data, ['fechaContrato', 'fechaRecepcion'], response);
-                            if (data.datosFolio.cliente && !util.isObject(data.datosFolio.cliente)) {
-                                response.code = 400;
-                                response.info.push('ESTRUCTURA NODO cliente INCORRECTA');
-                            } else if (data.datosFolio.cliente) {
-                                let mandatoryFieldsCliente = ['nombre', 'rfc'];
-                                if (data.datosFolio.cliente.esPersona) {
-                                    mandatoryFieldsCliente.push('apellidoPaterno');
-                                    // mandatoryFieldsCliente.push('apellidoMaterno');
-                                }
-                                checkMandatoryFieldsDate(data.datosFolio.cliente, ['fechaNacimiento'], response);
-                                checkMandatoryFields(data.datosFolio.cliente, mandatoryFieldsCliente, response);
-                                if (Object.getOwnPropertyNames(data.datosFolio.cliente).indexOf('esPersona') != -1 && !util.isBoolean(data.datosFolio.cliente.esPersona)) {
+                            folioSustitucion = recordFind('customrecord_cseg_folio_conauto', 'anyof', 'externalid', data.folioSustitucion);
+                            let folioSustitucion2 = recordFind('customrecord_cseg_folio_conauto', 'is', 'name', data.folioSustitucion);
+                            if (!folioSustitucion && !folioSustitucion2) {
+                                if (data.datosFolio.pagoCon && ['1', '2'].indexOf(data.datosFolio.pagoCon + '') == -1) {
                                     response.code = 400;
-                                    response.info.push('CAMPO esPersona NO ES VALOR BOOLEANO');
+                                    response.info.push('ID DE pagoCon NO VÁLIDO: ' + data.datosFolio.pagoCon);
                                 }
-                                if (Object.getOwnPropertyNames(data.datosFolio.cliente).indexOf('sexo') != -1 && !util.isBoolean(data.datosFolio.cliente.sexo)) {
+                                if (data.datosFolio.estado && ['1', '2', '3', '4'].indexOf(data.datosFolio.estado + '') == -1) {
                                     response.code = 400;
-                                    response.info.push('CAMPO sexo NO ES VALOR BOOLEANO');
+                                    response.info.push('ID DE estatus NO VÁLIDO: ' + data.datosFolio.estado);
                                 }
-                                if (data.datosFolio.cliente.direccion && !util.isObject(data.datosFolio.cliente.direccion)) {
+                                if (data.datosFolio.subestado && ['1', '2', '3', '4', '5', '6', '7', '8', ''].indexOf(data.datosFolio.subestado + '') == -1) {
                                     response.code = 400;
-                                    response.info.push('ESTRUCTURA NODO direccion INCORRECTA');
-                                } else if (data.datosFolio.cliente.direccion) {
-                                    let mandatoryFieldsDireccion = ['calle', 'colonia', 'estado', 'cp'];
-                                    checkMandatoryFields(data.datosFolio.cliente.direccion, mandatoryFieldsDireccion, response);
+                                    response.info.push('ID DE sub estatus NO VÁLIDO: ' + data.datosFolio.subestado);
                                 }
-                            }
-                            if (data.datosFolio.grupo && !util.isObject(data.datosFolio.grupo)) {
+                                checkMandatoryFieldsDate(data, ['fechaContrato', 'fechaRecepcion', 'fechaCesion'], response);
+                                if (data.datosFolio.cliente && !util.isObject(data.datosFolio.cliente)) {
+                                    response.code = 400;
+                                    response.info.push('ESTRUCTURA NODO cliente INCORRECTA');
+                                } else if (data.datosFolio.cliente) {
+                                    let mandatoryFieldsCliente = ['nombre', 'rfc'];
+                                    if (data.datosFolio.cliente.esPersona) {
+                                        mandatoryFieldsCliente.push('apellidoPaterno');
+                                        // mandatoryFieldsCliente.push('apellidoMaterno');
+                                    }
+                                    checkMandatoryFieldsDate(data.datosFolio.cliente, ['fechaNacimiento'], response);
+                                    checkMandatoryFields(data.datosFolio.cliente, mandatoryFieldsCliente, response);
+                                    if (Object.getOwnPropertyNames(data.datosFolio.cliente).indexOf('esPersona') != -1 && !util.isBoolean(data.datosFolio.cliente.esPersona)) {
+                                        response.code = 400;
+                                        response.info.push('CAMPO esPersona NO ES VALOR BOOLEANO');
+                                    }
+                                    if (Object.getOwnPropertyNames(data.datosFolio.cliente).indexOf('sexo') != -1 && !util.isBoolean(data.datosFolio.cliente.sexo)) {
+                                        response.code = 400;
+                                        response.info.push('CAMPO sexo NO ES VALOR BOOLEANO');
+                                    }
+                                    if (data.datosFolio.cliente.direccion && !util.isObject(data.datosFolio.cliente.direccion)) {
+                                        response.code = 400;
+                                        response.info.push('ESTRUCTURA NODO direccion INCORRECTA');
+                                    } else if (data.datosFolio.cliente.direccion) {
+                                        let mandatoryFieldsDireccion = ['calle', 'colonia', 'estado', 'cp'];
+                                        checkMandatoryFields(data.datosFolio.cliente.direccion, mandatoryFieldsDireccion, response);
+                                    }
+                                }
+                                if (data.datosFolio.grupo && !util.isObject(data.datosFolio.grupo)) {
+                                    response.code = 400;
+                                    response.info.push('ESTRUCTURA NODO grupo INCORRECTA');
+                                } else if (data.datosFolio.grupo) {
+                                    let mandatoryFieldsGrupo = ['id', 'nombre'];
+                                    checkMandatoryFields(data.datosFolio.grupo, mandatoryFieldsGrupo, response);
+                                    checkMandatoryFieldsDate(data.datosFolio.grupo, ['finVigencia'], response);
+                                }
+                            } else {
                                 response.code = 400;
-                                response.info.push('ESTRUCTURA NODO grupo INCORRECTA');
-                            } else if (data.datosFolio.grupo) {
-                                let mandatoryFieldsGrupo = ['id', 'nombre'];
-                                checkMandatoryFields(data.datosFolio.grupo, mandatoryFieldsGrupo, response);
-                                checkMandatoryFieldsDate(data.datosFolio.grupo, ['finVigencia'], response);
+                                response.info.push('EL FOLIO SUSTITUCIÓN YA EXISTE, VERIFICA EL REGISTRO DEL FOLIO');
+                                handlerErrorLogRequest('EL FOLIO SUSTITUCIÓN YA EXISTE, VERIFICA EL REGISTRO DEL FOLIO', logId);
                             }
+
                         } else {
                             response.code = 400;
                             response.info.push('ESTA INTENTANDO OPERAR CON UN FOLIO YA SUSTITUIDO PREVIAMENTE, VERIFICA EL REGISTRO DEL FOLIO');

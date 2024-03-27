@@ -695,38 +695,31 @@ define([
                 function cesionDerechos(data, response) {
                         let recordType = 'customrecord_cseg_folio_conauto';
                         let folioId = lib_conauto.recordFind(recordType, 'anyof', 'externalid', data.folio);
+                        let folioSustitucion;
                         if (!folioId) {
                                 folioId = lib_conauto.recordFind('customrecord_cseg_folio_conauto', 'is', 'name', data.folio);
                         }
                         if (folioId) {
-                                let folioSustitucion = recordFind('customrecord_cseg_folio_conauto', 'is', 'custrecord_folio_sustitucion', data.folioSustitucion);
 
-                                let recordObj = (folioSustitucion) ? record.load({
+                                let recordObj = record.create({
+                                        type: recordType,
+                                        isDynamic: true
+                                });
+                                let recordViejoObj = record.load({
                                         type: recordType,
                                         id: folioId,
                                         isDynamic: true
-                                }) : record.create({
-                                        type: recordType,
-                                        isDynamic: true,
-                                        defaultValues: {
-                                                externalid: data.folioSustitucion,
-                                                name: data.folioSustitucion
-                                        }
                                 });
 
+
+                                recordObj.setValue("externalid", data.folioSustitucion);
+                                recordObj.setValue("name", data.folioSustitucion);
+                                recordObj.setValue("custrecord_folio_origen", folioId);
                                 if (recordObj.getValue('custrecord_folio_estado') == 1) { // Es el estado de solicitante
                                         lib_conauto.setOpcionalData(recordObj, 2, 'custrecord_folio_estado'); // 2 Es el estado de Integrante
                                 }
-                                lib_conauto.setOpcionalData(recordObj, data.subestado, 'custrecord_folio_subestatus');
-                                if (data.folioSustitucion) {
-                                        data.folioSustitucion = lib_conauto.recordFind(recordType, 'anyof', 'externalid', data.folioSustitucion);
-                                }
+                                lib_conauto.setOpcionalData(recordObj, data.datosFolio.subestado, 'custrecord_folio_subestatus');
                                 let mapsFieldsFolio = [
-                                        {
-                                                'field': 'folioSustitucion',
-                                                'fieldRecord': 'custrecord_folio_sustitucion',
-                                                'type': 'text'
-                                        },
                                         {
                                                 'field': 'bid',
                                                 'fieldRecord': 'custrecord_imr_bid_conauto',
@@ -813,6 +806,11 @@ define([
                                                 'type': 'date'
                                         },
                                         {
+                                                'field': 'estado',
+                                                'fieldRecord': 'custrecord_folio_estado',
+                                                'type': 'number'
+                                        },
+                                        {
                                                 'field': 'importe',
                                                 'fieldRecord': 'custrecord_imr_importe_conauto',
                                                 'type': 'number'
@@ -833,9 +831,9 @@ define([
                                                 'type': 'text'
                                         }
                                 ]
-                                lib_conauto.setDataRecord(mapsFieldsFolio, data, recordObj);
-                                if (data.cliente) {
-                                        let customerId = lib_conauto.recordFind('customer', 'is', 'custentity_imr_rfc_operacion', data.cliente.rfc);
+                                lib_conauto.setDataRecord(mapsFieldsFolio, data.datosFolio, recordObj);
+                                if (data.datosFolio.cliente) {
+                                        let customerId = lib_conauto.recordFind('customer', 'is', 'custentity_imr_rfc_operacion', data.datosFolio.cliente.rfc);
                                         let customerObj = null;
                                         let preferences = conautoPreferences.get();
                                         log.debug('customerId', customerId);
@@ -858,18 +856,18 @@ define([
                                                         value: subsidiary
                                                 });
                                         }
-                                        if (data.cliente.esPersona) {
+                                        if (data.datosFolio.cliente.esPersona) {
                                                 customerObj.setValue({
                                                         fieldId: 'isperson',
                                                         value: 'T'
                                                 });
                                                 customerObj.setValue({
                                                         fieldId: 'firstname',
-                                                        value: data.cliente.nombre
+                                                        value: data.datosFolio.cliente.nombre
                                                 });
                                                 customerObj.setValue({
                                                         fieldId: 'lastname',
-                                                        value: (data.cliente.apellidoMaterno) ? `${data.cliente.apellidoPaterno} ${data.cliente.apellidoMaterno}` : data.cliente.apellidoPaterno
+                                                        value: (data.datosFolio.cliente.apellidoMaterno) ? `${data.datosFolio.cliente.apellidoPaterno} ${data.datosFolio.cliente.apellidoMaterno}` : data.datosFolio.cliente.apellidoPaterno
                                                 });
                                         } else {
                                                 customerObj.setValue({
@@ -878,7 +876,7 @@ define([
                                                 });
                                                 customerObj.setValue({
                                                         fieldId: 'companyname',
-                                                        value: data.cliente.nombre
+                                                        value: data.datosFolio.cliente.nombre
                                                 });
                                         }
                                         customerObj.setValue({
@@ -955,14 +953,14 @@ define([
                                                 }
                                         ]
                                         let listCfdis = lib_conauto.getCFDIs();
-                                        data.cliente.usoCfdi = listCfdis[data.cliente.usoCfdi];
-                                        data.cliente.correo = data.cliente.correo.replace("Ñ", "L");
-                                        lib_conauto.setDataRecord(mapsFieldsClient, data.cliente, customerObj);
+                                        data.datosFolio.cliente.usoCfdi = listCfdis[data.datosFolio.cliente.usoCfdi];
+                                        data.datosFolio.cliente.correo = data.datosFolio.cliente.correo.replace("Ñ", "L");
+                                        lib_conauto.setDataRecord(mapsFieldsClient, data.datosFolio.cliente, customerObj);
                                         customerObj.setValue({
                                                 fieldId: 'vatregnumber',
-                                                value: data.cliente.rfc
+                                                value: data.datosFolio.cliente.rfc
                                         }); //L.R.M.R. 29/09/2021
-                                        if (data.cliente.direccion) {
+                                        if (data.datosFolio.cliente.direccion) {
                                                 let countLine = customerObj.getLineCount({
                                                         sublistId: 'addressbook'
                                                 });
@@ -1000,27 +998,27 @@ define([
                                                 });
                                                 addressObj.setValue({
                                                         fieldId: 'addr1',
-                                                        value: data.cliente.direccion.calle
+                                                        value: data.datosFolio.cliente.direccion.calle
                                                 });
                                                 addressObj.setValue({
                                                         fieldId: 'addr2',
-                                                        value: data.cliente.direccion.colonia
+                                                        value: data.datosFolio.cliente.direccion.colonia
                                                 });
                                                 addressObj.setValue({
                                                         fieldId: 'addr3',
-                                                        value: data.cliente.direccion.municipio || ''
+                                                        value: data.datosFolio.cliente.direccion.municipio || ''
                                                 });
                                                 addressObj.setValue({
                                                         fieldId: 'state',
-                                                        value: data.cliente.direccion.estado
+                                                        value: data.datosFolio.cliente.direccion.estado
                                                 });
                                                 addressObj.setValue({
                                                         fieldId: 'city',
-                                                        value: data.cliente.direccion.ciudad
+                                                        value: data.datosFolio.cliente.direccion.ciudad
                                                 });
                                                 addressObj.setValue({
                                                         fieldId: 'zip',
-                                                        value: data.cliente.direccion.cp
+                                                        value: data.datosFolio.cliente.direccion.cp
                                                 });
                                                 customerObj.commitLine({
                                                         sublistId: 'addressbook'
@@ -1034,10 +1032,10 @@ define([
                                                 value: customerId
                                         });
                                 }
-                                if (data.grupo) {
-                                        let grupoId = lib_conauto.recordFind('customrecord_cseg_grupo_conauto', 'anyof', 'externalid', data.grupo.id);
+                                if (data.datosFolio.grupo) {
+                                        let grupoId = lib_conauto.recordFind('customrecord_cseg_grupo_conauto', 'anyof', 'externalid', data.datosFolio.grupo.id);
                                         if (grupoId === '' || grupoId === null) {
-                                                grupoId = lib_conauto.recordFind('customrecord_cseg_grupo_conauto', 'is', 'name', data.grupo.nombre);
+                                                grupoId = lib_conauto.recordFind('customrecord_cseg_grupo_conauto', 'is', 'name', data.datosFolio.grupo.nombre);
                                         }
                                         let grupoObj = null;
                                         log.debug('grupoId', grupoId);
@@ -1054,7 +1052,7 @@ define([
                                                 });
                                                 grupoObj.setValue({
                                                         fieldId: 'externalid',
-                                                        value: data.grupo.id
+                                                        value: data.datosFolio.grupo.id
                                                 });
                                         }
                                         let mapsFieldGrupo = [
@@ -1114,7 +1112,7 @@ define([
                                                         'type': 'text'
                                                 }
                                         ];
-                                        lib_conauto.setDataRecord(mapsFieldGrupo, data.grupo, grupoObj);
+                                        lib_conauto.setDataRecord(mapsFieldGrupo, data.datosFolio.grupo, grupoObj);
                                         grupoId = grupoObj.save({
                                                 ignoreMandatoryFields: true
                                         });
@@ -1123,16 +1121,22 @@ define([
                                                 value: grupoId
                                         })
                                 }
-                                folioId = recordObj.save({
+                                folioSustitucion = recordObj.save({
+                                        ignoreMandatoryFields: true
+                                });
+                                recordViejoObj.setValue("custrecord_folio_sustitucion", folioSustitucion);
+                                recordViejoObj.setValue("custrecord_imr_fecha_cesion", lib_conauto.getValueFormat("date", data.datosFolio.fechaCesion));
+                                recordViejoObj.setValue("custrecord_imr_mes_cesion", data.datosFolio.mesCesion);
+                                folioId = recordViejoObj.save({
                                         ignoreMandatoryFields: true
                                 });
                         }
                         return {
                                 recordType: recordType,
                                 transactions: [],
-                                records: [folioId],
+                                records: [folioId, folioSustitucion],
                                 solPagos: [],
-                                folios: [folioId]
+                                folios: [folioId, folioSustitucion]
                         };
                 }
 
