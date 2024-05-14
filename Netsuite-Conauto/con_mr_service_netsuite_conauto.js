@@ -112,7 +112,7 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
                 var operations = {
                     'PrimerasCuotas': primerasCuotas,
                     'SolicitudPago': solicitudPago,
-                    'AplicacionCobranza': aplicacionCobranza, // También esta identificación cobranza
+                    'AplicacionCobranza': aplicacionCobranza, // También esta cobranza
                     'CobranzaIdentificada': cobranzaIdentificada,
                     'ProvisionCartera': provisionCartera, // CreacionCartera
                 }
@@ -1034,13 +1034,13 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
                         key: 'PCP',
                         reference: 'carteraCredito'
                     });
-                    let conceptos = ['aportacion', 'gastos', 'iva', 'seguroVida', 'seguroAuto'];
+                    let conceptos = ['aportacion', 'gastos', 'seguroVida', 'seguroAuto'];
                     for (const concepto of conceptos) {
                         let classId = preferences.getPreference({
                             key: 'CLSP',
                             reference: concepto
                         });
-                        let amount = parseFloat(payment[concepto]);
+                        let amount = parseFloat((concepto != "gastos") ? payment[concepto] : payment[concepto] + payment['iva']);
                         log.error("PAYMENT:", payment)
                         log.error("DATO MONTO:", amount)
                         if (amount > 0) {
@@ -1082,11 +1082,11 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
                     if (seguroAutoAmount) {
                         let accountDebitSeguroAuto = preferences.getPreference({
                             key: 'CCP',
-                            reference: 'seguroAutoAumento'
+                            reference: 'seguroAutoDisminucion'
                         });
                         let accountCreditSeguroAuto = preferences.getPreference({
                             key: 'CCP',
-                            reference: 'seguroAutoDisminucion'
+                            reference: 'seguroAutoAumento'
                         });
 
                         let journalSeguroAuto = lib_conauto.createRecordHeader(record.Type.JOURNAL_ENTRY, preferences, memo, type);
@@ -1210,6 +1210,16 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
                         type: "number",
                         field: "seguro_vida",
                         fieldRecord: "custrecord_conauto_seguro_vida"
+                    },
+                    {
+                        type: "number",
+                        field: "saldo_favor",
+                        fieldRecord: "custrecord_conauto_saldo_fav"
+                    },
+                    {
+                        type: "number",
+                        field: "saldo_liq",
+                        fieldRecord: "custrecord_conauto_saldo_liq"
                     },
                     {
                         type: "number",

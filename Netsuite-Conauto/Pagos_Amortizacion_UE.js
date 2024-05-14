@@ -622,10 +622,10 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                         fieldId: "custbody_imr_tippolcon",
                         value: 1
                     });
-                    diarioObj.setValue({
-                        fieldId: "trandate",
-                        value: new Date()
-                    });
+                    // diarioObj.setValue({
+                    //     fieldId: "trandate",
+                    //     value: new Date()
+                    // });
                     diarioObj.setValue({
                         fieldId: "currency",
                         value: 1
@@ -2147,7 +2147,10 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
             try {
                 log.audit("crearDiarioIndetificado")
                 let cuentaCobranza = null;
-                if (diarioNoIden) {
+                let cobranzaIdentificada = pagoObj.getValue({
+                    fieldId: "custrecord_imr_pa_rec_pago"
+                });
+                if (diarioNoIden || cobranzaIdentificada) {
                     cuentaCobranza = preferences.getPreference({
                         key: "CCNI"
                     });
@@ -2157,6 +2160,7 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                         reference: recerencia
                     });
                 }
+
                 let folioObj = record.load({
                     type: "customrecord_cseg_folio_conauto",
                     id: folioId
