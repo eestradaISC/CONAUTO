@@ -562,28 +562,31 @@ Scripts utilizados por CONAUTO en NetSuite
 
     - **CobranzaIdentificada**
 
-  - | Campo             | Tipo                   |
-    | ----------------- | ---------------------- |
-    | folioCorrecto     | String                 |
-    | folioIncorrecto   | String                 |
-    | status            | Number                 |
-    | referencia        | String                 |
-    | referenciaCompleta| String                 |
-    | fechaCobranza     | Date Format DD/MM/YYYY |
-    | fechaPago         | Date Format DD/MM/YYYY |
-    | monto             | Number                 |
-    | grupo             | String                 |
-    | cliente           | String                 |
-    | aportacion        | Number                 |
-    | gastos            | Number                 |
-    | iva               | Number                 |
-    | seguro_auto       | Number                 |
-    | seguro_vida       | Number                 |
-    | total_pagar       | Number                 |
-    | formaPago         | String                 |
-    | numPago           | Number                 |
-    | saldo_lig         | Number                 |
-    | saldo_favor       | Number                 |
+  - | Campo                   | Tipo                   |
+    | ----------------------- | ---------------------- |
+    | tipo                    | String                 |
+    | idNotificacion          | String                 |
+    | pagos                   | Array [Object]         |
+    | pagos.folioCorrecto     | String                 |
+    | pagos.folioIncorrecto   | String                 |
+    | pagos.status            | Number                 |
+    | pagos.referencia        | String                 |
+    | pagos.referenciaCompleta| String                 |
+    | pagos.fechaCobranza     | Date Format DD/MM/YYYY |
+    | pagos.fechaPago         | Date Format DD/MM/YYYY |
+    | pagos.monto             | Number                 |
+    | pagos.grupo             | String                 |
+    | pagos.cliente           | String                 |
+    | pagos.aportacion        | Number                 |
+    | pagos.gastos            | Number                 |
+    | pagos.iva               | Number                 |
+    | pagos.seguro_auto       | Number                 |
+    | pagos.seguro_vida       | Number                 |
+    | pagos.total_pagar       | Number                 |
+    | pagos.formaPago         | String                 |
+    | pagos.numPago           | Number                 |
+    | pagos.saldo_lig         | Number                 |
+    | pagos.saldo_favor       | Number                 |
 
   - ```json
     Ejemplo JSON
@@ -614,6 +617,6 @@ Scripts utilizados por CONAUTO en NetSuite
             "saldo_favor": 0
         }
     ]
-  }
+    }
+    
   ```
-
