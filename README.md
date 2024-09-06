@@ -559,3 +559,61 @@ Scripts utilizados por CONAUTO en NetSuite
         ]
     }
     ```
+
+    - **CobranzaIdentificada**
+
+  - | Campo             | Tipo                   |
+    | ----------------- | ---------------------- |
+    | folioCorrecto     | String                 |
+    | folioIncorrecto   | String                 |
+    | status            | Number                 |
+    | referencia        | String                 |
+    | referenciaCompleta| String                 |
+    | fechaCobranza     | Date Format DD/MM/YYYY |
+    | fechaPago         | Date Format DD/MM/YYYY |
+    | monto             | Number                 |
+    | grupo             | String                 |
+    | cliente           | String                 |
+    | aportacion        | Number                 |
+    | gastos            | Number                 |
+    | iva               | Number                 |
+    | seguro_auto       | Number                 |
+    | seguro_vida       | Number                 |
+    | total_pagar       | Number                 |
+    | formaPago         | String                 |
+    | numPago           | Number                 |
+    | saldo_lig         | Number                 |
+    | saldo_favor       | Number                 |
+
+  - ```json
+    Ejemplo JSON
+    {
+    "tipo": "CobranzaIdentificada",
+    "idNotificacion": "150",
+    "pagos": [
+        {
+            "folioCorrecto": "1136629",
+            "folioIncorrecto": "0113669",
+            "status": 1,
+            "referencia": "RA",
+            "referenciaCompleta": "RA07122023",
+            "fechaCobranza": "07/12/2023",
+            "fechaPago": "07/12/2023",
+            "monto": 8000,
+            "grupo": "5649",
+            "cliente": "11",
+            "aportacion": 4666.65,
+            "gastos": 1400,
+            "iva": 224,
+            "seguro_auto": 1353.03,
+            "seguro_vida": 356.32,
+            "total_pagar": 8000,
+            "formaPago": "1",
+            "numPago": 835496,
+            "saldo_liq": 0,
+            "saldo_favor": 0
+        }
+    ]
+  }
+  ```
+
