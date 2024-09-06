@@ -1082,11 +1082,11 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
                     if (seguroAutoAmount) {
                         let accountDebitSeguroAuto = preferences.getPreference({
                             key: 'CCP',
-                            reference: 'seguroAutoDisminucion'
+                            reference: 'seguroAutoAumento'
                         });
                         let accountCreditSeguroAuto = preferences.getPreference({
                             key: 'CCP',
-                            reference: 'seguroAutoAumento'
+                            reference: 'seguroAutoDisminucion'
                         });
 
                         let journalSeguroAuto = lib_conauto.createRecordHeader(record.Type.JOURNAL_ENTRY, preferences, memo, type);

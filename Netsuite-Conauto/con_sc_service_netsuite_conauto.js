@@ -604,6 +604,14 @@ define([
                                                 value: grupoId
                                         })
                                 }
+                                let statusFolio = search.lookupFields({
+                                        type: "customrecord_cseg_folio_conauto",
+                                        id: folioId,
+                                        columns: "custrecord_folio_estado"
+                                }).custrecord_folio_estado[0].value;
+                                if (statusFolio.toString() != (recordObj.getValue("custrecord_folio_estado")).toString()) {
+                                        recordObj.setValue("custrecord_folio_estado", statusFolio)
+                                }
                                 folioId = recordObj.save({
                                         ignoreMandatoryFields: true
                                 });
