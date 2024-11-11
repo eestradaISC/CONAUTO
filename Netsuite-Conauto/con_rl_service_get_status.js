@@ -63,6 +63,9 @@ define([
         }
 
         function getStatusLOG(data, response) {
+            data.startDate = stringToDateConauto(data.startDate);
+            data.endDate = stringToDateConauto(data.endDate);
+            searchCollectionPerDay(data)
             let logData = record.load({
                 id: Number(data.log),
                 type: 'customrecord_log_service_conauto'
@@ -86,6 +89,57 @@ define([
                 "paymentsProcessed": paymentsProcessed,
             }
             return response;
+        }
+
+        function searchCollectionPerDay(data) {
+            try {
+                let collection = {}
+                search.create({
+                    type: "transaction",
+                    settings: [{ "name": "consolidationtype", "value": "ACCTTYPE" }, { "name": "includeperiodendtransactions", "value": "F" }],
+                    filters:
+                        [
+                            [["memo", "contains", "Cobranza PRIMERAS CUOTAS de la referencia%"], "OR", ["memo", "contains", "identificacion de la cobranza Recibida de la referencia %"], "OR", ["memo", "contains", "Disminución de la cartera por la cobranza recibida de la referencia %"], "OR", ["memo", "contains", "Cobranza Recibida en Sistema de Comercialización de la referencia %"], "OR", ["memo", "contains", "Cuenta por pagar a proveedores por cobranza%"], "OR", ["memo", "contains", "DISMINUCION DE SEGURO AUTO POR APLICACIÓN DE LA COBRANZA DE LA REFERENCIA%"], "OR", ["memo", "contains", "Pago identificado de la referencia %"]],
+                            "AND",
+                            ["account", "anyof", "2644", "453", "463", "467", "484", "485", "486", "490", "2014"],
+                            "AND",
+                            ["trandate", "within", data.startDate, data.endDate]
+                        ],
+                    columns:
+                        [
+                            search.createColumn({
+                                name: "account",
+                                summary: "GROUP",
+                                label: "Cuenta"
+                            }),
+                            search.createColumn({
+                                name: "debitamount",
+                                summary: "SUM",
+                                label: "Importe (débito)"
+                            }),
+                            search.createColumn({
+                                name: "creditamount",
+                                summary: "SUM",
+                                label: "Importe (crédito)"
+                            })
+                        ]
+                }).run().each((result) => {
+                    let account = result.getValue({
+                        name: "account",
+                        summary: "GROUP",
+                        label: "Cuenta"
+                    });
+                    let amount = result.getValue({
+                        name: "creditamount",
+                        summary: "SUM",
+                        label: "Importe (crédito)"
+                    })
+                    collection[account] = amount;
+                });
+                return collection;
+            } catch (error) {
+                log.error("Error find collection per day")
+            }
         }
 
         function recordFind(recordType, operator, field, value) {

@@ -82,6 +82,13 @@ define(["N/record", "N/file", "/SuiteScripts/Conauto_Preferences.js", "IMR/IMRSe
             }
         }
 
+        handler.existValue = (numPago, numPagoExist, errors) => {
+            if (numPagoExist === true) {
+                errors.push((line ? ('Linea ' + line + ': ') : '') + 'El numPago ' + numPago + ' ya se encuentra en el sistema');
+            }
+
+        }
+
         handler.verificarValoresVacios = (objeto, errors, foliosErroneos) => {
             for (let clave in objeto) {
                 if (objeto.hasOwnProperty(clave)) {
@@ -265,100 +272,10 @@ define(["N/record", "N/file", "/SuiteScripts/Conauto_Preferences.js", "IMR/IMRSe
             return journalObj;
         }
 
-        handler.createJournalCXP = (payment, preferences, transactions) => {
-            try {
-                log.error("createJournalCXP")
-                let reference = payment.referencia;
-                let cliente = payment.cliente;
-                let date = handler.stringToDateConauto(payment.fecha);
-                let formaPago = payment.formaPago == "0" ? "01" : payment.formaPago;
-                let folioText = payment.folio;
-                let referenceCompleta = payment.referencia;
-                let folioId = payment.folioId;
-                let grupoId = payment.grupoId;
-                let gastos = parseFloat((payment.iva + payment.gastos).toFixed(2));
-
-                if (gastos > 0) {
-                    let subsidiary = preferences.getPreference({
-                        key: "SUBCONAUTO"
-                    });
-                    let memo = `Cuenta por pagar a proveedores por cobranza recibida referencia ${referenceCompleta} - Folio ${folioText} - Gpo ${payment.grupo} - Int ${payment.integrante}`;
-
-                    let diarioObj = record.create({
-                        type: record.Type.JOURNAL_ENTRY,
-                        isDynamic: true
-                    });
-                    diarioObj.setValue({
-                        fieldId: "subsidiary",
-                        value: subsidiary
-                    });
-                    diarioObj.setValue({
-                        fieldId: "custbody_imr_tippolcon",
-                        value: 1
-                    });
-                    diarioObj.setValue({
-                        fieldId: "trandate",
-                        value: date
-                    });
-                    diarioObj.setValue({
-                        fieldId: "currency",
-                        value: 1
-                    });
-                    diarioObj.setValue({
-                        fieldId: "memo",
-                        value: memo
-                    });
-                    let cuentaDebito = preferences.getPreference({
-                        key: "CCP",
-                        reference: 'gastos'
-                    });
-                    let accountCredit = preferences.getPreference({
-                        key: "CCP",
-                        reference: 'gastosPorPagar'
-                    });
-
-                    let classId = preferences.getPreference({
-                        key: 'CLSP',
-                        reference: 'gastos'
-                    });
-
-                    handler.addLineJournal(diarioObj, cuentaDebito, true, gastos, {
-                        memo: memo,
-                        custcol_referencia_conauto: reference,
-                        custcol_metodo_pago_conauto: formaPago,
-                        custcol_folio_texto_conauto: folioText,
-                        cseg_folio_conauto: folioId,
-                        cseg_grupo_conauto: grupoId,
-                        entity: cliente,
-                        class: classId,
-                        location: 6
-                    });
-                    handler.addLineJournal(diarioObj, accountCredit, false, gastos, {
-                        memo: memo,
-                        custcol_referencia_conauto: reference,
-                        custcol_metodo_pago_conauto: formaPago,
-                        custcol_folio_texto_conauto: folioText,
-                        cseg_folio_conauto: folioId,
-                        cseg_grupo_conauto: grupoId,
-                        entity: cliente,
-                        class: classId,
-                        location: 6
-                    });
-                    journalId = diarioObj.save({
-                        ignoreMandatoryFields: true,
-                    });
-                    conautoPreferences.setFolioConauto(journalId);
-                    transactions.push(journalId);
-                }
-            } catch (e) {
-                log.error('createJournalCXP', e);
-            }
-        }
-
         handler.createInvoice = (payment, preferences, transactions) => {
             try {
                 log.error("createInvoice")
-                let fechaCobranza = handler.stringToDateConauto(payment.fecha)
+                let fechaCobranza = handler.stringToDateConauto(payment.fecha);
 
                 let referenciaCompleta = payment.referencia;
                 let cliente = payment.cliente;
@@ -498,6 +415,52 @@ define(["N/record", "N/file", "/SuiteScripts/Conauto_Preferences.js", "IMR/IMRSe
                 }
             } catch (e) {
                 log.error('createInvoice', 'Linea 1798: ' + e);
+            }
+        }
+
+        handler.checkInfoFolio = (folio, errors, foliosErroneos) => {
+            try {
+                let dataFolio = {};
+                search.searchAllRecords({
+                    type: 'customrecord_cseg_folio_conauto',
+                    columns: [
+                        search.createColumn({ name: 'internalid' }),
+                        search.createColumn({ name: 'externalid' }),
+                        search.createColumn({ name: 'name' }),
+                        search.createColumn({ name: 'custrecord_cliente_integrante' }),
+                        search.createColumn({ name: 'custrecord_grupo' }),
+                        search.createColumn({ name: 'custrecord_imr_integrante_conauto' }),
+                        search.createColumn({ name: 'custrecord_folio_estado' })
+                    ],
+                    filters: [
+                        search.createFilter({
+                            name: 'name',
+                            operator: search.main().Operator.IS,
+                            values: folio
+                        })
+                    ],
+                    data: dataFolio,
+                    callback: function (result, dataFolio) {
+                        let id = result.getValue({ name: 'internalid' });
+                        let folio = result.getValue({ name: 'name' });
+                        let cliente = result.getValue({ name: 'custrecord_cliente_integrante' });
+                        let grupo = result.getValue({ name: 'custrecord_grupo' });
+                        let integrante = result.getValue({ name: 'custrecord_imr_integrante_conauto' });
+                        let estadoFolio = result.getValue({ name: 'custrecord_folio_estado' });
+                        dataFolio.folio = id;
+                        dataFolio["numFolio"] = folio
+                        dataFolio.cliente = cliente;
+                        dataFolio.grupo = grupo;
+                        dataFolio.integrante = integrante;
+                        dataFolio.estadoFolio = estadoFolio;
+
+                    }
+                });
+                log.debug("dataFolio", dataFolio);
+                handler.verificarValoresVacios(dataFolio, errors, foliosErroneos);
+                log.debug("errors0", foliosErroneos);
+            } catch (error) {
+                log.error("Error process info of folio for check null", error);
             }
         }
 

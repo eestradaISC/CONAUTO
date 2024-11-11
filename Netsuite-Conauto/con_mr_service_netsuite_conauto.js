@@ -3,7 +3,7 @@
  * @NScriptType MapReduceScript
  * @NAmdConfig /SuiteScripts/IMR_Modules_Libs_Config.json
  */
-define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js", "IMR/IMRSearch", "N/error", "/SuiteScripts/con_lib_service_netsuite.js"],
+define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js", "IMR/IMRSearch", "N/error", "/SuiteScripts/con_lib_service_netsuite.js", "N/search"],
     /**
      * @param {record} record
      * @param {runtime} runtime
@@ -11,7 +11,7 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
      * @param {IMRSearch} search
      * @param {error} error
      */
-    (record, file, runtime, conautoPreferences, search, error, lib_conauto) => {
+    (record, file, runtime, conautoPreferences, search, error, lib_conauto, search2) => {
         const LOG_SERVICE_CONAUTO = "customrecord_log_service_conauto"
         const RECORDS_PROCESSED = {
             "processed": 0
@@ -112,7 +112,7 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
                 var operations = {
                     'PrimerasCuotas': primerasCuotas,
                     'SolicitudPago': solicitudPago,
-                    'AplicacionCobranza': aplicacionCobranza, // También esta cobranza
+                    'AplicacionCobranza': aplicacionCobranza, // También esta identificación cobranza
                     'CobranzaIdentificada': cobranzaIdentificada,
                     'ProvisionCartera': provisionCartera, // CreacionCartera
                 }
@@ -722,48 +722,12 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
             for (let payment of payments) {
                 line++;
                 lib_conauto.checkMandatoryFields(payment, mandatoryFields, line, errors);
+                let numPagoExist = searchNumPago(payment.numPago);
+                lib_conauto.existValue(payment.numPago, numPagoExist, errors);
                 //Validación de información en folio
                 if (payment.folio) {
                     if (payment.aportacion != 0 || payment.gastos != 0 || payment.iva != 0 || payment.seguro_auto != 0 || payment.seguro_vida != 0) {
-                        let dataFolio = {};
-                        search.searchAllRecords({
-                            type: 'customrecord_cseg_folio_conauto',
-                            columns: [
-                                search.createColumn({ name: 'internalid' }),
-                                search.createColumn({ name: 'externalid' }),
-                                search.createColumn({ name: 'name' }),
-                                search.createColumn({ name: 'custrecord_cliente_integrante' }),
-                                search.createColumn({ name: 'custrecord_grupo' }),
-                                search.createColumn({ name: 'custrecord_imr_integrante_conauto' }),
-                                search.createColumn({ name: 'custrecord_folio_estado' })
-                            ],
-                            filters: [
-                                search.createFilter({
-                                    name: 'name',
-                                    operator: search.main().Operator.IS,
-                                    values: payment.folio
-                                })
-                            ],
-                            data: dataFolio,
-                            callback: function (result, dataFolio) {
-                                let id = result.getValue({ name: 'internalid' });
-                                let folio = result.getValue({ name: 'name' });
-                                let cliente = result.getValue({ name: 'custrecord_cliente_integrante' });
-                                let grupo = result.getValue({ name: 'custrecord_grupo' });
-                                let integrante = result.getValue({ name: 'custrecord_imr_integrante_conauto' });
-                                let estadoFolio = result.getValue({ name: 'custrecord_folio_estado' });
-                                dataFolio.folio = id;
-                                dataFolio["numFolio"] = folio
-                                dataFolio.cliente = cliente;
-                                dataFolio.grupo = grupo;
-                                dataFolio.integrante = integrante;
-                                dataFolio.estadoFolio = estadoFolio;
-
-                            }
-                        });
-                        log.debug("dataFolio", dataFolio);
-                        lib_conauto.verificarValoresVacios(dataFolio, errors, foliosErroneos);
-                        log.debug("errors0", foliosErroneos);
+                        lib_conauto.checkInfoFolio(payment.folio, errors, foliosErroneos)
                     }
                 }
             }
@@ -1082,11 +1046,11 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
                     if (seguroAutoAmount) {
                         let accountDebitSeguroAuto = preferences.getPreference({
                             key: 'CCP',
-                            reference: 'seguroAutoAumento'
+                            reference: 'seguroAutoDisminucion'
                         });
                         let accountCreditSeguroAuto = preferences.getPreference({
                             key: 'CCP',
-                            reference: 'seguroAutoDisminucion'
+                            reference: 'seguroAutoAumento'
                         });
 
                         let journalSeguroAuto = lib_conauto.createRecordHeader(record.Type.JOURNAL_ENTRY, preferences, memo, type);
@@ -1157,6 +1121,7 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
             let errors = [];
             let transactions = [];
             let folios = [];
+            let foliosErroneos = [];
             let recordType = "customrecord_imr_pagos_amortizacion";
             let payments = data.pagos || [];
             if (payments.length == 0) {
@@ -1171,6 +1136,7 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
             for (let i = 0; i < payments.length; i++) {
                 let payment = payments[i];
                 lib_conauto.checkMandatoryFields(payment, mandatoryFields, i + 1, errors);
+                lib_conauto.checkInfoFolio(payment.folio, errors, foliosErroneos);
                 pagosId.push(payment.id);
                 dataPayments[payment.id] = payment;
             }
@@ -1331,6 +1297,17 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
                     }
                 }
             } else {
+                let scriptObj = runtime.getCurrentScript();
+                let logId = scriptObj.getParameter({
+                    name: "custscript_log_service_id_mr"
+                });
+                record.submitFields({
+                    type: LOG_SERVICE_CONAUTO,
+                    id: Number(logId),
+                    values: {
+                        "custrecord_log_serv_folios_no_processed": [...new Set(foliosErroneos)]
+                    }
+                });
                 throw error.create({
                     name: "DATA_ERROR_PAYMENTS",
                     message: errors.join("\n")
@@ -1371,6 +1348,30 @@ define(["N/record", "N/file", "N/runtime", "/SuiteScripts/Conauto_Preferences.js
                     })
                 }
             }
+        }
+
+        /**
+         * 
+         * @param numPago
+         * @return {result}
+         */
+        function searchNumPago(numPago) {
+            let result = false;
+            var customrecord_imr_pagos_amortizacionSearchObj = search2.create({
+                type: "customrecord_imr_pagos_amortizacion",
+                filters:
+                    [["custrecord_conauto_num_payment_service", "equalto", numPago]],
+                columns:
+                    [
+                        search2.createColumn({ name: "internalid", label: "ID" }),
+                    ]
+            });
+            var searchResultCount = customrecord_imr_pagos_amortizacionSearchObj.runPaged().count;
+            log.debug("customrecord_imr_pagos_amortizacionSearchObj result count", searchResultCount);
+            if (searchResultCount > 0) {
+                result = true
+            }
+            return result;
         }
 
         return { getInputData, map, reduce, summarize }

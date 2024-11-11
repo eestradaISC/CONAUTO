@@ -62,6 +62,7 @@ define([
                     'CambiarEstatus': cambiarEstatus,
                     'ReclasificacionPrimeraCuota': reclasificacionPrimeraCuota,
                     'CesionDerechos': cesionDerechos,
+                    'CancelacionSeguros': cancelacionSeguros
                 }
                 let callback = operations[data.tipo];
                 if (callback) {
@@ -324,7 +325,7 @@ define([
                                 response.code = 400;
                                 response.info.push('ESTRUCTURA NODO cliente INCORRECTA');
                             } else if (data.cliente) {
-                                let mandatoryFieldsCliente = ['nombre', 'rfc'];
+                                let mandatoryFieldsCliente = ['nombre', 'rfc', 'usoCfdi', 'rfclave'];
                                 if (data.cliente.esPersona) {
                                     mandatoryFieldsCliente.push('apellidoPaterno');
                                     // mandatoryFieldsCliente.push('apellidoMaterno');
@@ -1058,6 +1059,58 @@ define([
             }
         }
 
+        /**
+         * @param {Object} data
+         * @param {String} data.tipo
+         * @param {String} data.idNotificacion
+         * @param {String} data.folio
+         * @param {String} data.grupo
+         * @param {String} data.cliente Integrante
+         * @param {String} data.status
+         * @param {String} data.subestatus
+         * @param {String} data.referencia Referencia abreviada
+         * @param {String} data.referenciaCompleta
+         * @param {String} data.fechaCancelacion
+         * @param {Number} data.monto
+         * @param {Boolean} data.seguro_auto Se utilizara para identificar si es seguro de vida o auto
+         * @param {String} data.numPago NOTE: Ignorar por el momento
+         * @param {Object} response
+         * @param {Number} response.code
+         * @param {Array}  response.info
+         */
+        function cancelacionSeguros(data, response) {
+            let logId = null;
+            logId = createLog(data, response);
+            response.logId = logId;
+            try {
+                let folioId = recordFind("customrecord_cseg_folio_conauto", 'anyof', "externalid", data.folio);
+                if (folioId) {
+                    let mandatoryFields = ["folio", "monto", "referencia", "referenciaCompleta", "grupo", "cliente", "idNotificacion"];
+                    checkMandatoryFields(data, mandatoryFields, response);
+                    checkMandatoryFieldsDate(data, ["fechaCancelacion"], response)
+                } else {
+                    response.code = 304;
+                    response.info.push("Folio: " + data.folio + " no existe en netsuite");
+                }
+                if (response.code != 304) {
+                    let dataFolio = search.lookupFields({
+                        type: "customrecord_cseg_folio_conauto",
+                        id: folioId,
+                        columns: ["custrecord_grupo", "custrecord_imr_integrante_conauto"]
+                    });
+                    log.error("dataFolio", data)
+                    log.error("dataFolio", dataFolio)
+                    if (dataFolio.custrecord_grupo[0].text != data.grupo) { response.code = 304; response.info.push(`El grupo no coincide con el registrado en NetSuite, actualizar folio.`) };
+                    if (dataFolio.custrecord_imr_integrante_conauto != data.cliente) { response.code = 304; response.info.push(`El integrante no coincide con el registrado en NetSuite, actualizar folio.`) };
+                }
+
+            } catch (error) {
+                response.code = 500;
+                response.info.push('ERROR CREATE LOG REQUEST: ' + e.message.toString());
+                handlerErrorLogRequest('ERROR CREATE LOG REQUEST: ' + e.message.toString(), logId);
+            }
+        }
+
 
         function createLog(data, response) {
             let logId = null;
@@ -1349,7 +1402,10 @@ define([
             if (response.code == 300) {
                 response.code = 200;
                 response.info.push('Petición Exitosa');
+            } else {
+                handlerErrorLogRequest('ERROR REQUEST: ' + response.info, response.logId);
             }
+
         }
 
         return { post: postRequest }

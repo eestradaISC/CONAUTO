@@ -601,7 +601,7 @@ define(["IMR/IMRSearch", "N/record", "/SuiteScripts/Conauto_Preferences.js", 'N/
                     "aportacion": "4",
                 }
 
-                if (!journalCartera && total != 0 && estadoFolio == '4') {
+                if (!journalCartera && total != 0 && (estadoFolio == '4' || montosReparto["seguroAuto"] > 0)) {
                     let diarioObj = record.create({
                         type: record.Type.JOURNAL_ENTRY,
                         isDynamic: true

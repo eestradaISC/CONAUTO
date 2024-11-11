@@ -372,6 +372,9 @@ define(["N/record", "IMR/IMRSearch", "/SuiteScripts/Conauto_Preferences.js", "N/
             var grupo = recordObj.getValue({
                 fieldId: "custrecord_imr_solpa_grupo"
             });
+            var integrante = recordObj.getValue({
+                fieldId: "custrecord_imr_solpa_integrante"
+            });
             var nombre = recordObj.getValue({
                 fieldId: "custrecord_imr_solpa_nom_ben"
             });
@@ -495,6 +498,21 @@ define(["N/record", "IMR/IMRSearch", "/SuiteScripts/Conauto_Preferences.js", "N/
             });
             facturaObj.setCurrentSublistValue({
                 sublistId: "expense",
+              fieldId: "cseg_folio_conauto",
+              value: folioId
+          });
+            facturaObj.setCurrentSublistValue({
+                sublistId: "expense",
+                fieldId: "cseg_grupo_conauto",
+                value: grupo
+            });
+            facturaObj.setCurrentSublistValue({
+                sublistId: "expense",
+                fieldId: "custcol_imr_conauto_integrante",
+                value: integrante
+            });
+            facturaObj.setCurrentSublistValue({
+                sublistId: "expense",
                 fieldId: "location",
                 value: 6
             });
@@ -569,6 +587,13 @@ define(["N/record", "IMR/IMRSearch", "/SuiteScripts/Conauto_Preferences.js", "N/
             var nota = "Pago de unidad de adjudicados por siniestro del grupo integrante" + grupoTexto + " - " + integrante + ", No. Folio " + folioForMemo + ", " + nombre;
             // var nota = "Provision por pago de unidad x siniestro de auto" + folioForMemo;
             var tranidnote = "Provision PDU x siniestro auto " + folioForMemo;
+            log.error({
+                title: "MEMOOOOOS",
+                details: {
+                    "nota": nota,
+                    "tranidnote": tranidnote
+                }
+            });
             var facturaObj = record.create({
                 type: record.Type.VENDOR_BILL,
                 isDynamic: true
@@ -625,6 +650,21 @@ define(["N/record", "IMR/IMRSearch", "/SuiteScripts/Conauto_Preferences.js", "N/
                 sublistId: "expense",
                 fieldId: "amount",
                 value: importeGasto
+            });
+            facturaObj.setCurrentSublistValue({
+                sublistId: "expense",
+                fieldId: "cseg_folio_conauto",
+                value: folioId
+            });
+            facturaObj.setCurrentSublistValue({
+                sublistId: "expense",
+                fieldId: "cseg_grupo_conauto",
+                value: grupo
+            });
+            facturaObj.setCurrentSublistValue({
+                sublistId: "expense",
+                fieldId: "custcol_imr_conauto_integrante",
+                value: integrante
             });
 
             // Añadir aprobadores
@@ -1037,7 +1077,8 @@ define(["N/record", "IMR/IMRSearch", "/SuiteScripts/Conauto_Preferences.js", "N/
                 cseg_folio_conauto: folio,
                 cseg_grupo_conauto: grupo,
                 location: 6,
-                custcol_folio_texto_conauto: folioColumnText
+                custcol_folio_texto_conauto: folioColumnText,
+                custcol_referencia_conauto: referencia
             });
             addLineJournal(diarioObj, cuentaCredito, false, importe.toFixed(2), {
                 entity: clienteId,
@@ -1045,7 +1086,8 @@ define(["N/record", "IMR/IMRSearch", "/SuiteScripts/Conauto_Preferences.js", "N/
                 cseg_folio_conauto: folio,
                 cseg_grupo_conauto: grupo,
                 location: 6,
-                custcol_folio_texto_conauto: folioColumnText
+                custcol_folio_texto_conauto: folioColumnText,
+                custcol_referencia_conauto: referencia
             });
 
             const idJournal = diarioObj.save({ ignoreMandatoryFields: true });
