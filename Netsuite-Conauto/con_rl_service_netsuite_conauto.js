@@ -62,7 +62,7 @@ define([
                     'CambiarEstatus': cambiarEstatus,
                     'ReclasificacionPrimeraCuota': reclasificacionPrimeraCuota,
                     'CesionDerechos': cesionDerechos,
-                    'CancelacionSeguros': cancelacionSeguros
+                    'DisminucionCartera': disminucionCartera
                 }
                 let callback = operations[data.tipo];
                 if (callback) {
@@ -274,7 +274,7 @@ define([
                             response.code = 400;
                             response.info.push('ESTRUCTURA NODO cliente INCORRECTA');
                         } else if (data.cliente) {
-                            let mandatoryFieldsCliente = ['nombre', 'rfc'];
+                            let mandatoryFieldsCliente = ['nombre', 'rfc', 'usoCfdi', 'rfclave'];
                             if (data.cliente.esPersona) {
                                 mandatoryFieldsCliente.push('apellidoPaterno');
                                 // mandatoryFieldsCliente.push('apellidoMaterno');
@@ -325,7 +325,7 @@ define([
                                 response.code = 400;
                                 response.info.push('ESTRUCTURA NODO cliente INCORRECTA');
                             } else if (data.cliente) {
-                                let mandatoryFieldsCliente = ['nombre', 'rfc', 'usoCfdi', 'rfclave'];
+                                let mandatoryFieldsCliente = ['nombre', 'rfc'];
                                 if (data.cliente.esPersona) {
                                     mandatoryFieldsCliente.push('apellidoPaterno');
                                     // mandatoryFieldsCliente.push('apellidoMaterno');
@@ -1067,27 +1067,30 @@ define([
          * @param {String} data.grupo
          * @param {String} data.cliente Integrante
          * @param {String} data.status
-         * @param {String} data.subestatus
          * @param {String} data.referencia Referencia abreviada
          * @param {String} data.referenciaCompleta
-         * @param {String} data.fechaCancelacion
+         * @param {String} data.fecha
          * @param {Number} data.monto
-         * @param {Boolean} data.seguro_auto Se utilizara para identificar si es seguro de vida o auto
-         * @param {String} data.numPago NOTE: Ignorar por el momento
+         * @param {Number} data.aportacion
+	     * @param {Number} data.gastos
+	     * @param {Number} data.iva
+	     * @param {Number} data.seguro_auto
+	     * @param {Number} data.seguro_vida
+         * @param {String} data.numSol NOTE: Ignorar por el momento
          * @param {Object} response
          * @param {Number} response.code
          * @param {Array}  response.info
          */
-        function cancelacionSeguros(data, response) {
+        function disminucionCartera(data, response) {
             let logId = null;
             logId = createLog(data, response);
             response.logId = logId;
             try {
                 let folioId = recordFind("customrecord_cseg_folio_conauto", 'anyof', "externalid", data.folio);
                 if (folioId) {
-                    let mandatoryFields = ["folio", "monto", "referencia", "referenciaCompleta", "grupo", "cliente", "idNotificacion"];
+                    let mandatoryFields = ["folio", "monto", "aportacion", "gastos", "iva", "seguro_auto", "seguro_vida", "referencia", "referenciaCompleta", "grupo", "cliente", "idNotificacion"];
                     checkMandatoryFields(data, mandatoryFields, response);
-                    checkMandatoryFieldsDate(data, ["fechaCancelacion"], response)
+                    checkMandatoryFieldsDate(data, ["fecha"], response)
                 } else {
                     response.code = 304;
                     response.info.push("Folio: " + data.folio + " no existe en netsuite");

@@ -68,7 +68,7 @@ define([
                                         'CambiarEstatus': cambiarEstatus,
                                         'ReclasificacionPrimeraCuota': reclasificacionPrimeraCuota,
                                         'PagoUnidad': pagoUnidad,
-                                        'CancelacionSeguros': cancelacionSeguros
+                                        'DisminucionCartera': disminucionCartera
                                 }
                                 let callback = operations[request.tipo];
                                 log.debug('callback', callback);
@@ -156,7 +156,7 @@ define([
                 * @param {String} data.cliente.telefonoCasa
                 * @param {String} data.cliente.celular
                 * @param {String} data.cliente.correo
-                * @param {String} data.cliente.rf-clave
+                * @param {String} data.cliente.rfclave
                 * @param {String} data.cliente.razon
                 * @param {Object} data.cliente.direccion datos de la dirección
                 * @param {Object} data.cliente.direccion.calle
@@ -679,7 +679,7 @@ define([
                 * @param {String} data.datosFolio.cliente.telefonoCasa
                 * @param {String} data.datosFolio.cliente.celular
                 * @param {String} data.datosFolio.cliente.correo
-                * @param {String} data.datosFolio.cliente.rf-clave
+                * @param {String} data.datosFolio.cliente.rfclave
                 * @param {String} data.datosFolio.cliente.razon
                 * @param {Object} data.datosFolio.cliente.direccion datos de la dirección
                 * @param {Object} data.datosFolio.cliente.direccion.calle
@@ -911,7 +911,7 @@ define([
                                                         'type': 'text'
                                                 },
                                                 {
-                                                        'field': 'rf-clave',
+                                                        'field': 'rfclave',
                                                         'fieldRecord': 'custentity_imr_fe40_regimenfiscal',
                                                         'type': 'text'
                                                 },
@@ -1905,15 +1905,18 @@ define([
                  * @param {String} data.grupo
                  * @param {String} data.cliente Integrante
                  * @param {String} data.status
-                 * @param {String} data.subestatus
                  * @param {String} data.referencia Referencia abreviada
                  * @param {String} data.referenciaCompleta
-                 * @param {String} data.fechaCancelacion
+                 * @param {String} data.fecha
                  * @param {Number} data.monto
-                 * @param {Boolean} data.seguro_auto Se utilizara para identificar si es seguro de vida o auto
-                 * @param {String} data.numPago NOTE: Ignorar por el momento
+                 * @param {Number} data.aportacion
+                 * @param {Number} data.gastos
+                 * @param {Number} data.iva
+                 * @param {Number} data.seguro_auto
+                 * @param {Number} data.seguro_vida
+                 * @param {String} data.numSol NOTE: Ignorar por el momento
                 */
-                function cancelacionSeguros(data) {
+                function disminucionCartera(data) {
                         let recordType = "transaction";
                         let recordsId = [];
                         let folios = [];
@@ -1921,6 +1924,12 @@ define([
                         let folioId = "";
                         let errors = [];
                         folioId = lib_conauto.recordFind("customrecord_cseg_folio_conauto", 'anyof', "externalid", data.folio);
+                        let typesRef = {
+                                "CI": "Quebranto",
+                                "PE": "Pagos en Exceso",
+                                "GL": "Grupos Liquidados",
+                                "CS": "Cancelación de seguro"
+                        }
 
                         if (folioId) {
                                 folios.push(folioId);
@@ -1929,22 +1938,20 @@ define([
                                         id: folioId,
                                         columns: ["custrecord_cliente_integrante", "custrecord_grupo", "custrecord_imr_integrante_conauto"]
                                 });
+                                let montosReparto = {
+                                        "gastos": parseFloat(data.gastos),
+                                        "seguroVida": parseFloat(data.seguro_vida),
+                                        "seguroAuto": parseFloat(data.seguro_auto),
+                                        "aportacion": parseFloat(data.aportacion)
+                                }
+
+                                let dateOfReference = data.referenciaCompleta.substring(2, 10);
+                                dateOfReference = `${date.substring(0, 2)}/${date.substring(2, 4)}/${date.substring(4, 8)}`;
+
                                 let preferences = conautoPreferences.get();
-                                let accountDebit = preferences.getPreference({
-                                        key: "CS",
-                                        reference: "debito"
-                                });
-                                let accountCredit = preferences.getPreference({
-                                        key: "CS",
-                                        reference: "credito"
-                                });
-                                let memo = `Disminución de cartera por Siniestro de ${data.seguro_auto ? "Auto" : "Vida"} de la referencia ${data.referenciaCompleta} - Folio ${data.folio} - Gpo ${data.grupo} - Int${data.cliente}`;
+                                let memo = `Disminución de cartera por ${typesRef[data.referencia]} de la referencia ${data.referenciaCompleta} - Folio ${data.folio} - Gpo ${data.grupo} - Int${data.cliente}`;
                                 let subsidiary = preferences.getPreference({
                                         key: "SUBCONAUTO"
-                                });
-                                let classId = preferences.getPreference({
-                                        key: "CLSP",
-                                        reference: data.seguro_auto ? "seguroAuto" : "seguroVida"
                                 });
                                 let diarioObj = record.create({
                                         type: record.Type.JOURNAL_ENTRY,
@@ -1960,7 +1967,7 @@ define([
                                 });
                                 diarioObj.setValue({
                                         fieldId: "trandate",
-                                        value: lib_conauto.stringToDateConauto(data.fechaCancelacion)
+                                        value: lib_conauto.stringToDateConauto(dateOfReference)
                                 });
                                 diarioObj.setValue({
                                         fieldId: "currency",
@@ -1970,41 +1977,124 @@ define([
                                         fieldId: "memo",
                                         value: memo
                                 });
-                                diarioObj.setValue({
-                                        fieldId: "custbody_tipo_transaccion_conauto",
-                                        value: data.seguro_auto ? 8 : 7
+
+                                let accountCredit = preferences.getPreference({
+                                        key: "PCP",
+                                        reference: "carteraDebito"
                                 });
-                                lib_conauto.addLineJournal(diarioObj, accountDebit, true, data.monto.toFixed(2), {
-                                        memo: memo,
-                                        custcol_referencia_conauto: data.referenciaCompleta,
-                                        custcol_metodo_pago_conauto: data.formaPago,
-                                        custcol_folio_texto_conauto: data.folio,
-                                        cseg_folio_conauto: folioId,
-                                        cseg_grupo_conauto: dataFolio.custrecord_grupo[0].value,
-                                        custcol_imr_conauto_integrante: dataFolio.custrecord_imr_integrante_conauto,
-                                        entity: dataFolio.custrecord_cliente_integrante[0].value,
-                                        class: classId,
-                                        location: 6
+                                let accountDebit = preferences.getPreference({
+                                        key: "PCP",
+                                        reference: "carteraCredito"
                                 });
 
-                                lib_conauto.addLineJournal(diarioObj, accountCredit, false, data.monto.toFixed(2), {
-                                        memo: memo,
-                                        custcol_referencia_conauto: data.referenciaCompleta,
-                                        custcol_metodo_pago_conauto: data.formaPago,
-                                        custcol_folio_texto_conauto: data.folio,
-                                        cseg_folio_conauto: folioId,
-                                        cseg_grupo_conauto: dataFolio.custrecord_grupo[0].value,
-                                        custcol_imr_conauto_integrante: dataFolio.custrecord_imr_integrante_conauto,
-                                        entity: dataFolio.custrecord_cliente_integrante[0].value,
-                                        class: classId,
-                                        location: 6
-                                });
+                                for (let concepto in montosReparto) {
+                                        let importeConcepto = montosReparto[concepto] || 0;
+                                        if (importeConcepto == 0) {
+                                                continue;
+                                        }
+                                        let classId = preferences.getPreference({
+                                                key: "CLSP",
+                                                reference: concepto
+                                        });
+                                        lib_conauto.addLineJournal(diarioObj, accountDebit, true, importeConcepto.toFixed(2), {
+                                                memo: memo,
+                                                custcol_referencia_conauto: data.referenciaCompleta,
+                                                custcol_folio_texto_conauto: data.folio,
+                                                cseg_folio_conauto: folioId,
+                                                cseg_grupo_conauto: dataFolio.custrecord_grupo[0].value,
+                                                custcol_imr_conauto_integrante: dataFolio.custrecord_imr_integrante_conauto,
+                                                entity: dataFolio.custrecord_cliente_integrante[0].value,
+                                                class: classId,
+                                                location: 6
+                                        });
+                                        lib_conauto.addLineJournal(diarioObj, accountCredit, false, importeConcepto.toFixed(2), {
+                                                memo: memo,
+                                                custcol_referencia_conauto: data.referenciaCompleta,
+                                                custcol_folio_texto_conauto: data.folio,
+                                                cseg_folio_conauto: folioId,
+                                                cseg_grupo_conauto: dataFolio.custrecord_grupo[0].value,
+                                                custcol_imr_conauto_integrante: dataFolio.custrecord_imr_integrante_conauto,
+                                                entity: dataFolio.custrecord_cliente_integrante[0].value,
+                                                class: classId,
+                                                location: 6
+                                        });
+                                }
+
 
                                 let diarioId = diarioObj.save({
                                         ignoreMandatoryFields: true
                                 });
                                 transactions.push(diarioId);
 
+                                // Creamos asiento de seguro
+                                if (montosReparto["seguroAuto"] > 0) {
+                                        let memo = `Disminución de seguro auto por ${typesRef[data.referencia]} de la referencia ${data.referenciaCompleta} - Folio ${data.folio} - Gpo ${data.grupo} - Int${data.cliente}`;
+                                        let saJournal = record.create({
+                                                type: record.Type.JOURNAL_ENTRY,
+                                                isDynamic: true
+                                        });
+                                        saJournal.setValue({
+                                                fieldId: "subsidiary",
+                                                value: subsidiary
+                                        });
+                                        saJournal.setValue({
+                                                fieldId: "custbody_imr_tippolcon",
+                                                value: 1
+                                        });
+                                        saJournal.setValue({
+                                                fieldId: "trandate",
+                                                value: lib_conauto.stringToDateConauto(dateOfReference)
+                                        });
+                                        saJournal.setValue({
+                                                fieldId: "currency",
+                                                value: 1
+                                        });
+                                        saJournal.setValue({
+                                                fieldId: "memo",
+                                                value: memo
+                                        });
+
+                                        accountDebit = preferences.getPreference({
+                                                key: "CCP",
+                                                reference: 'seguroAutoAumento'
+                                        });
+                                        accountCredit = preferences.getPreference({
+                                                key: "CCP",
+                                                reference: 'seguroAutoDisminucion'
+                                        });
+                                        let classId = preferences.getPreference({
+                                                key: 'CLSP',
+                                                reference: 'seguroAuto'
+                                        });
+
+                                        lib_conauto.addLineJournal(saJournal, accountDebit, true, montosReparto["seguroAuto"].toFixed(2), {
+                                                memo: memo,
+                                                custcol_referencia_conauto: data.referenciaCompleta,
+                                                custcol_folio_texto_conauto: data.folio,
+                                                cseg_folio_conauto: folioId,
+                                                cseg_grupo_conauto: dataFolio.custrecord_grupo[0].value,
+                                                custcol_imr_conauto_integrante: dataFolio.custrecord_imr_integrante_conauto,
+                                                entity: dataFolio.custrecord_cliente_integrante[0].value,
+                                                class: classId,
+                                                location: 6
+                                        });
+                                        lib_conauto.addLineJournal(saJournal, accountCredit, false, montosReparto["seguroAuto"].toFixed(2), {
+                                                memo: memo,
+                                                custcol_referencia_conauto: data.referenciaCompleta,
+                                                custcol_folio_texto_conauto: data.folio,
+                                                cseg_folio_conauto: folioId,
+                                                cseg_grupo_conauto: dataFolio.custrecord_grupo[0].value,
+                                                custcol_imr_conauto_integrante: dataFolio.custrecord_imr_integrante_conauto,
+                                                entity: dataFolio.custrecord_cliente_integrante[0].value,
+                                                class: classId,
+                                                location: 6
+                                        });
+                                        let saJournalId = saJournal.save({
+                                                ignoreMandatoryFields: true,
+                                        });
+                                        conautoPreferences.setFolioConauto(saJournalId);
+                                        transactions.push(saJournalId);
+                                }
 
                         } else {
                                 throw error.create({

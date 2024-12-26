@@ -82,16 +82,20 @@ define([
         function searchCollectionPerDay(data, response) {
             try {
                 let collection = [];
+                let references = getReferencesBetweenDates(data);
+                references.pop()
+                // references.push(["trandate", "within", data.fechaInicio, data.fechaFinal])
+
                 search.create({
                     type: "transaction",
                     settings: [{ "name": "consolidationtype", "value": "ACCTTYPE" }, { "name": "includeperiodendtransactions", "value": "F" }],
                     filters:
                         [
-                            [["memo", "contains", "Cobranza PRIMERAS CUOTAS de la referencia%"], "OR", ["memo", "contains", "identificacion de la cobranza Recibida de la referencia %"], "OR", ["memo", "contains", "Disminución de la cartera por la cobranza recibida de la referencia %"], "OR", ["memo", "contains", "Cobranza Recibida en Sistema de Comercialización de la referencia %"], "OR", ["memo", "contains", "Cuenta por pagar a proveedores por cobranza%"], "OR", ["memo", "contains", "DISMINUCION DE SEGURO AUTO POR APLICACIÓN DE LA COBRANZA DE LA REFERENCIA%"], "OR", ["memo", "contains", "Pago no identificado de la referencia%"], "OR", ["memo", "contains", "Pago identificado de la referencia %"]],
+                            [["memo", "contains", "Cobranza PRIMERAS CUOTAS de la referencia%"], "OR", ["memo", "contains", "identificacion de la cobranza Recibida de la referencia %"], "OR", ["memo", "contains", "Disminución de la cartera por la cobranza recibida de la referencia %"], "OR", ["memo", "contains", "Cobranza Recibida en Sistema de Comercialización de la referencia %"], "OR", ["memo", "contains", "Cuenta por pagar a proveedores por cobranza%"], "OR", ["memo", "contains", "DISMINUCION DE SEGURO AUTO POR APLICACIÓN DE LA COBRANZA DE LA REFERENCIA%"], "OR", ["memo", "contains", "Aplicación de Saldo a Estado de Cuenta de la referencia%"], "OR", ["memo", "contains", "Pago no identificado de la referencia%"], "OR", ["memo", "contains", "Devolución De 1ra cuota de la cobranza recibida de la referencia%"], "OR", ["memo", "contains", "Pago identificado de la referencia %"]], 
                             "AND",
-                            ["account", "anyof", "2644", "453", "463", "467", "484", "485", "486", "490", "2014"],
+                            ["account", "anyof", "2643", "2644", "453", "463", "467", "484", "485", "486", "490", "2014"],
                             "AND",
-                            ["trandate", "within", data.fechaInicio, data.fechaFinal]
+                            references
                         ],
                     columns:
                         [
@@ -127,7 +131,19 @@ define([
                         summary: "SUM",
                         label: "Importe (crédito)"
                     });
-                    collection.push({ "account": account, "credit": Number(creditAmount), "debit": Number(debitAmount) });
+                    if (account.includes("PAGOS EN EXCESO")) {
+                        let index = collection.findIndex(data => data.account.includes("PAGOS EN EXCESO"));
+                        if (index == -1) {
+                            collection.push({ "account": account, "credit": Number(creditAmount), "debit": Number(debitAmount) });    
+                        } else {
+                            collection[index].account = "9242-002-000-000 PAGOS EN EXCESO";
+                            collection[index].credit = Number((collection[index].credit + Number(creditAmount)).toFixed(2));
+                            collection[index].debit = Number((collection[index].debit + Number(debitAmount)).toFixed(2));
+                        }
+                    } else {
+                        collection.push({ "account": account, "credit": Number(creditAmount), "debit": Number(debitAmount) });
+                    }
+
                     return true;
                 });
                 return collection;
@@ -299,6 +315,27 @@ define([
                 log.error("Error find collection per day", error);
                 response.info.push(error.message);
             }
+        }
+
+        function getReferencesBetweenDates(data) {
+            let references = [];
+            let startDate = data.fechaInicio.split("/");
+            let endDate = data.fechaFinal.split("/");
+
+            startDate = new Date(`${startDate[1]}/${startDate[0]}/${startDate[2]}`);
+            endDate = new Date(`${endDate[1]}/${endDate[0]}/${endDate[2]}`);
+            do {
+                const month = startDate.getUTCMonth() + 1; // months from 1-12
+                const day = startDate.getUTCDate();
+                const year = startDate.getUTCFullYear();
+                const pMonth = month.toString().padStart(2, "0");
+                const pDay = day.toString().padStart(2, "0");
+                const newPaddedDate = `${pDay}${pMonth}${year}`;
+                references.push(["custcol_referencia_conauto", "contains", `%${newPaddedDate}`], "OR");
+                startDate.setDate(startDate.getDate() + 1)
+            } while (Date.parse(startDate) <= Date.parse(endDate));
+
+            return references;
         }
 
         function stringToDateConauto(value) {

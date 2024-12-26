@@ -418,6 +418,154 @@ define(["N/record", "N/file", "/SuiteScripts/Conauto_Preferences.js", "IMR/IMRSe
             }
         }
 
+        handler.createJournalSeguroAuto = (idPago, preferences) => {
+            try {
+                log.audit("createJournalSeguroAuto")
+                let pagoObj = record.load({
+                    id: idPago,
+                    type: "customrecord_imr_pagos_amortizacion"
+                });
+                let referenceCompleta = pagoObj.getValue({
+                    fieldId: "custrecord_imr_pa_referencia_completa"
+                });
+                let esPrimerPago = pagoObj.getValue({
+                    fieldId: "custrecord_imr_rec_primer_pago"
+                });
+                let tipoBoleta = pagoObj.getValue({
+                    fieldId: "custrecord_imr_pa_tipo_boleta_interna"
+                });
+                let reference = pagoObj.getValue({
+                    fieldId: "custrecord_imr_pa_referencia"
+                });
+                let tipoBoletaTexto = pagoObj.getText({
+                    fieldId: "custrecord_imr_pa_tipo_boleta_interna"
+                }) || '';
+                let cliente = pagoObj.getValue({
+                    fieldId: "custrecord_imr_pa_cliente_integrante"
+                });
+                let journalId = pagoObj.getValue({
+                    fieldId: "custrecord__imr_pa_diario_seg_auto"
+                });
+                let date = pagoObj.getValue({
+                    fieldId: "custrecord_imr_pa_fecha"
+                });
+                let seguro = pagoObj.getValue({
+                    fieldId: "custrecord_conauto_seguro_auto"
+                });
+
+                let reinstalacion = pagoObj.getValue("custrecord_imr_pa_reinstalacion");
+                let formaPago = pagoObj.getValue({
+                    fieldId: "custrecord_imr_pa_forma_pago"
+                });
+                let folioText = pagoObj.getText({
+                    fieldId: "custrecord_imr_pa_folio"
+                });
+                let folioColumnText = pagoObj.getText({
+                    fieldId: "custrecord_imr_pa_folio_texto"
+                });
+                let folioId = pagoObj.getValue({
+                    fieldId: "custrecord_imr_pa_folio"
+                });
+                let grupoId = pagoObj.getValue({
+                    fieldId: "custrecord_imr_pa_grupo"
+                });
+                let grupoText = pagoObj.getText({
+                    fieldId: "custrecord_imr_pa_grupo"
+                });
+                let integranteText = pagoObj.getText({
+                    fieldId: "custrecord_imr_pa_integrante"
+                });
+
+                if ((["1", "2", "4"].indexOf(tipoBoleta) != -1 || esPrimerPago || true) && !journalId && seguro > 0) {
+                    let typeTransaccion = typesTransaccion[tipoBoleta] || '';
+                    let facturaObj = record.create({
+                        type: record.Type.JOURNAL_ENTRY,
+                        isDynamic: true
+                    });
+                    let subsidiary = preferences.getPreference({
+                        key: "SUBCONAUTO"
+                    });
+                    let memo = "DISMINUCION DE SEGURO AUTO POR APLICACIÓN DE LA COBRANZA DE LA REFERENCIA " + referenceCompleta + (reinstalacion ? ' POR REINSTALACIóN' : '') + " - Folio " + folioText + " - Gpo " + grupoText + " - Int " + integranteText//+getReferenciaMemo(pagoObj);
+                    let diarioObj = record.create({
+                        type: record.Type.JOURNAL_ENTRY,
+                        isDynamic: true
+                    });
+                    diarioObj.setValue({
+                        fieldId: "subsidiary",
+                        value: subsidiary
+                    });
+                    diarioObj.setValue({
+                        fieldId: "custbody_imr_tippolcon",
+                        value: 1
+                    });
+                    diarioObj.setValue({
+                        fieldId: "trandate",
+                        value: date
+                    });
+                    diarioObj.setValue({
+                        fieldId: "currency",
+                        value: 1
+                    });
+                    diarioObj.setValue({
+                        fieldId: "memo",
+                        value: memo
+                    });
+                    diarioObj.setValue({
+                        fieldId: "custbody_tipo_transaccion_conauto",
+                        value: 5
+                    });
+                    let cuentaDebito = preferences.getPreference({
+                        key: "CCP",
+                        reference: 'seguroAutoAumento'
+                    });
+                    let accountCredit = preferences.getPreference({
+                        key: "CCP",
+                        reference: 'seguroAutoDisminucion'
+                    });
+                    let classId = preferences.getPreference({
+                        key: 'CLSP',
+                        reference: 'seguroAuto'
+                    });
+
+                    addLineJournal(diarioObj, cuentaDebito, true, seguro.toFixed(2), {
+                        memo: memo,
+                        custcol_referencia_conauto: referenceCompleta,
+                        custcol_metodo_pago_conauto: formaPago,
+                        custcol_folio_texto_conauto: folioColumnText,
+                        cseg_folio_conauto: folioId,
+                        cseg_grupo_conauto: grupoId,
+                        entity: cliente,
+                        class: classId,
+                        location: 6
+                    });
+                    addLineJournal(diarioObj, accountCredit, false, seguro.toFixed(2), {
+                        memo: memo,
+                        custcol_referencia_conauto: referenceCompleta,
+                        custcol_metodo_pago_conauto: formaPago,
+                        custcol_folio_texto_conauto: folioColumnText,
+                        cseg_folio_conauto: folioId,
+                        cseg_grupo_conauto: grupoId,
+                        entity: cliente,
+                        class: classId,
+                        location: 6
+                    });
+                    journalId = diarioObj.save({
+                        ignoreMandatoryFields: true,
+                    });
+                    conautoPreferences.setFolioConauto(journalId);
+                    pagoObj.setValue({
+                        fieldId: "custrecord__imr_pa_diario_seg_auto",
+                        value: journalId
+                    })
+                    pagoObj.save({
+                        ignoreMandatoryFields: true,
+                    });
+                }
+            } catch (e) {
+                log.error('createJournalSeguroAuto', 'Linea 1660: ' + e);
+            }
+        }
+
         handler.checkInfoFolio = (folio, errors, foliosErroneos) => {
             try {
                 let dataFolio = {};
