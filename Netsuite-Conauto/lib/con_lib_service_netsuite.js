@@ -5,7 +5,7 @@
 * @NApiVersion 2.1
 */
 
-define(["N/record", "N/file", "/SuiteScripts/Conauto_Preferences.js", "IMR/IMRSearch", "N/search", "N/error", "N/log"],
+define(["N/task", "N/record", "N/file", "/SuiteScripts/Conauto_Preferences.js", "IMR/IMRSearch", "N/search", "N/error", "N/log"],
     /**
      * @param {record} record
      * @param {file} file
@@ -15,7 +15,7 @@ define(["N/record", "N/file", "/SuiteScripts/Conauto_Preferences.js", "IMR/IMRSe
      * @param {error} error
      * @param {log} log
      */
-    (record, file, conautoPreferences, search, search_netsuite, error, log) => {
+    (task, record, file, conautoPreferences, search, search_netsuite, error, log) => {
         const handler = {};
 
         handler.applyPaymentLine = (recordObj, line) => {
@@ -42,6 +42,7 @@ define(["N/record", "N/file", "/SuiteScripts/Conauto_Preferences.js", "IMR/IMRSe
                 fieldId: "account",
                 value: account
             });
+            log.error('isdebit', isdebit ? "debit" : "credit");
             journal.setCurrentSublistValue({
                 sublistId: "line",
                 fieldId: isdebit ? "debit" : "credit",
@@ -610,6 +611,21 @@ define(["N/record", "N/file", "/SuiteScripts/Conauto_Preferences.js", "IMR/IMRSe
             } catch (error) {
                 log.error("Error process info of folio for check null", error);
             }
+        }
+
+        handler.invokeSCUncertifiedInvoices = () => {
+            try {
+                let scriptTask = task.create({
+                    taskType: task.TaskType.SCHEDULED_SCRIPT
+                });
+                scriptTask.scriptId = 'customscript_con_sc_enviofacprog';
+                scriptTask.deploymentId = 'customdeploy_con_sc_enviofacprog_call';
+                scriptTask.submit();
+            } catch (err) {
+                log.error("Error invokeSCUncertifiedInvoices", err.message);
+
+            }
+
         }
 
         return handler;

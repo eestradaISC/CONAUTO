@@ -20,6 +20,108 @@ define([
         search,
         conautoPreferences) {
 
+        const infoToSearch = {
+            "Monto total del banco RA": {
+                account: "434",
+                reference: ["RA"]
+            },
+            "Monto total del banco RP": {
+                account: "434",
+                reference: ["RP"]
+            },
+            "Monto total del banco RD": {
+                account: "438",
+                reference: ["RD"]
+            },
+            "Monto total del banco RB": {
+                account: "435",
+                reference: ["RB"]
+            },
+            "Monto total del banco OP": {
+                account: "435",
+                reference: ["OP"]
+            },
+            "Monto total del banco RT": {
+                account: "439",
+                reference: ["RT"]
+            },
+            "Total de la referencia RI": {
+                account: "454",
+                reference: ["RI"]
+            },
+            "Cobranza no identificada": {
+                account: "463"
+            },
+            "Devolución 1ra cuota": {
+                account: "2647"
+            },
+            "Grupos Liquidados": {
+                account: "453"
+            },
+            "Aportación": {
+                account: "484"
+            },
+            "Gastos de Administración + IVA 1": {
+                account: "467"
+            },
+            "Gastos de Administración + IVA 2": {
+                account: "468"
+            },
+            "Seguro de Vida": {
+                account: "485"
+            },
+            "Seguro de Auto 1": {
+                account: "486"
+            },
+            "Saldo a favor AP": {
+                account: "2644"
+            },
+            "Saldo a favor IN,CA,RE,AD.": {
+                account: "2643"
+            },
+            "Cartera 1": {
+                account: "490"
+            },
+            "Cartera 2": {
+                account: "451"
+            },
+            "Seguro de Auto 2": {
+                account: "462"
+            },
+            "Seguro de Auto 3": {
+                account: "494"
+            },
+            "Suma total de referencias RA, RP, RD, RB, RT, OP y RI": {
+                account: "315",
+                reference: ["RA", "RP", "RD", "RB", "RT", "OP", "RI"]
+            },
+            "Gastos de Administración": {
+                account: "2014"
+            },
+            "IVA": {
+                account: "337"
+            },
+            "Total de la cobranza RJ 1": {
+                account: "454",
+                reference: ["RJ"]
+            },
+            "Total de la cobranza RJ 2": {
+                account: "472",
+                reference: ["RJ"]
+            },
+            "Total de la cobranza RJ 3": {
+                account: "315",
+                reference: ["RJ"]
+            },
+            "Intereses de la cobranza RJ": {
+                account: "2655",
+                reference: ["RJ"]
+            },
+            "IVA RJ": {
+                account: "337"
+            },
+        };
+
         /**
         * @param request
         *        {String|Object} The request body as a String when
@@ -65,12 +167,10 @@ define([
         }
 
         function getCollectionPerDay(data, response) {
-            log.audit("data", data);
             response.data = searchCollectionPerDay(data, response);
         }
 
         function getCollectionPerFolio(data, response) {
-            log.audit("data", data);
             response.data = searchCollectionPerFolio(data, response);
         }
 
@@ -81,71 +181,33 @@ define([
 
         function searchCollectionPerDay(data, response) {
             try {
-                let collection = [];
-                let references = getReferencesBetweenDates(data);
-                references.pop()
-                // references.push(["trandate", "within", data.fechaInicio, data.fechaFinal])
+                let collection = [
+                ];
+                let referencesDate;
+                let references = getReferencesBetweenDates(data, false);
+                let referencesMemo = getReferencesBetweenDates(data, true);
 
-                search.create({
-                    type: "transaction",
-                    settings: [{ "name": "consolidationtype", "value": "ACCTTYPE" }, { "name": "includeperiodendtransactions", "value": "F" }],
-                    filters:
-                        [
-                            [["memo", "contains", "Cobranza PRIMERAS CUOTAS de la referencia%"], "OR", ["memo", "contains", "identificacion de la cobranza Recibida de la referencia %"], "OR", ["memo", "contains", "Disminución de la cartera por la cobranza recibida de la referencia %"], "OR", ["memo", "contains", "Cobranza Recibida en Sistema de Comercialización de la referencia %"], "OR", ["memo", "contains", "Cuenta por pagar a proveedores por cobranza%"], "OR", ["memo", "contains", "DISMINUCION DE SEGURO AUTO POR APLICACIÓN DE LA COBRANZA DE LA REFERENCIA%"], "OR", ["memo", "contains", "Aplicación de Saldo a Estado de Cuenta de la referencia%"], "OR", ["memo", "contains", "Pago no identificado de la referencia%"], "OR", ["memo", "contains", "Devolución De 1ra cuota de la cobranza recibida de la referencia%"], "OR", ["memo", "contains", "Pago identificado de la referencia %"]], 
-                            "AND",
-                            ["account", "anyof", "2643", "2644", "453", "463", "467", "484", "485", "486", "490", "2014"],
-                            "AND",
-                            references
-                        ],
-                    columns:
-                        [
-                            search.createColumn({
-                                name: "account",
-                                summary: "GROUP",
-                                label: "Cuenta"
-                            }),
-                            search.createColumn({
-                                name: "debitamount",
-                                summary: "SUM",
-                                label: "Importe (débito)"
-                            }),
-                            search.createColumn({
-                                name: "creditamount",
-                                summary: "SUM",
-                                label: "Importe (crédito)"
-                            })
-                        ]
-                }).run().each((result) => {
-                    let account = result.getText({
-                        name: "account",
-                        summary: "GROUP",
-                        label: "Cuenta"
-                    });
-                    let debitAmount = result.getValue({
-                        name: "debitamount",
-                        summary: "SUM",
-                        label: "Importe (débito)"
-                    });
-                    let creditAmount = result.getValue({
-                        name: "creditamount",
-                        summary: "SUM",
-                        label: "Importe (crédito)"
-                    });
-                    if (account.includes("PAGOS EN EXCESO")) {
-                        let index = collection.findIndex(data => data.account.includes("PAGOS EN EXCESO"));
-                        if (index == -1) {
-                            collection.push({ "account": account, "credit": Number(creditAmount), "debit": Number(debitAmount) });    
-                        } else {
-                            collection[index].account = "9242-002-000-000 PAGOS EN EXCESO";
-                            collection[index].credit = Number((collection[index].credit + Number(creditAmount)).toFixed(2));
-                            collection[index].debit = Number((collection[index].debit + Number(debitAmount)).toFixed(2));
-                        }
+                for (let progressName in infoToSearch) {
+                    let referencesv2 = references;
+                    let referencesMemov2 = referencesMemo;
+                    let ismemo = (progressName == "Suma total de referencias RA, RP, RD, RB, RT, OP y RI" || progressName == "Gastos de Administración" || progressName == "Total de la cobranza RJ 3") ? true : false;
+                    if (progressName == "Devolución 1ra cuota") {
+                        referencesDate = [...referencesv2, ...referencesMemov2]
                     } else {
-                        collection.push({ "account": account, "credit": Number(creditAmount), "debit": Number(debitAmount) });
+                        referencesDate = ismemo ? [...referencesMemov2] : [...referencesv2]
+                    }
+                    referencesDate.pop();
+                    let addFilter = [];
+                    log.audit("progressName", progressName);
+                    if (infoToSearch[progressName]?.reference) {
+                        for (let reference in infoToSearch[progressName].reference) {
+                            addFilter.push([ismemo ? "memomain" : "custcol_referencia_conauto", "contains", `${ismemo ? "%" : ""}${infoToSearch[progressName].reference[reference]}%`], "OR");
+                        }
+                        addFilter.pop();
                     }
 
-                    return true;
-                });
+                    searchPerAccounts(addFilter, referencesDate, progressName, infoToSearch[progressName].account, collection);
+                }
                 return collection;
             } catch (error) {
                 log.error("Error find collection per day", error);
@@ -317,7 +379,7 @@ define([
             }
         }
 
-        function getReferencesBetweenDates(data) {
+        function getReferencesBetweenDates(data, ismemo) {
             let references = [];
             let startDate = data.fechaInicio.split("/");
             let endDate = data.fechaFinal.split("/");
@@ -331,38 +393,82 @@ define([
                 const pMonth = month.toString().padStart(2, "0");
                 const pDay = day.toString().padStart(2, "0");
                 const newPaddedDate = `${pDay}${pMonth}${year}`;
-                references.push(["custcol_referencia_conauto", "contains", `%${newPaddedDate}`], "OR");
+                references.push([ismemo ? "memomain" : "custcol_referencia_conauto", "contains", `%${newPaddedDate}${ismemo ? "%" : ""}`], "OR");
                 startDate.setDate(startDate.getDate() + 1)
             } while (Date.parse(startDate) <= Date.parse(endDate));
 
             return references;
         }
 
-        function stringToDateConauto(value) {
-            if (value) {
-                let arrayDate = value.split("/");
-                return new Date(arrayDate[2], arrayDate[1] - 1, arrayDate[0]);
-            } else {
-                return null;
-            }
-        }
+        function searchPerAccounts(newFilters, references, progressName, accounts, collection) {
+            let sFilters = [
+                ["account", "anyof", accounts],
+                "AND",
+                references
+            ];
 
-        function handlerErrorLogRequest(e, logId) {
-            if (logId) {
-                log.error({
-                    title: 'ERRORHANDLER',
-                    details: 'LOG ID: ' + logId + ', ' + e
-                });
-                record.submitFields({
-                    type: 'customrecord_log_service_conauto',
-                    id: logId,
-                    values: {
-                        custrecord_log_serv_processed: true,
-                        custrecord_log_serv_error: e
-                    }
-                })
+            if (newFilters.length > 0 && progressName != "Suma total de referencias RA, RP, RD, RB, RT, OP y RI") {
+                sFilters.push("AND", newFilters);
+            } else if (progressName == "Suma total de referencias RA, RP, RD, RB, RT, OP y RI") {
+                sFilters.push("AND", ["memomain", "doesnotcontain", "%RJ%"]);
             }
-            return logId;
+
+            log.audit("sFilters", sFilters);
+
+            let searchTransactions = search.create({
+                type: "transaction",
+                filters: sFilters,
+                columns:
+                    [
+                        search.createColumn({
+                            name: "account",
+                            summary: "GROUP",
+                            label: "Cuenta"
+                        }),
+                        search.createColumn({
+                            name: "debitamount",
+                            summary: "SUM",
+                            label: "Importe (débito)"
+                        }),
+                        search.createColumn({
+                            name: "creditamount",
+                            summary: "SUM",
+                            label: "Importe (crédito)"
+                        })
+                    ]
+            });
+
+            let count = searchTransactions.runPaged().count;
+            log.audit(`${progressName} count:`, count);
+            if (count == 0) {
+                let account = search.lookupFields({
+                    type: "account",
+                    id: Number(accounts),
+                    columns: ["displayname"]
+                })
+                collection.push({ "progress": progressName, "account": `${account.displayname}`, "credit": 0, "debit": 0 });
+            }
+
+            searchTransactions.run().each((result) => {
+                let account = result.getText({
+                    name: "account",
+                    summary: "GROUP",
+                    label: "Cuenta"
+                });
+                let debitAmount = result.getValue({
+                    name: "debitamount",
+                    summary: "SUM",
+                    label: "Importe (débito)"
+                });
+                let creditAmount = result.getValue({
+                    name: "creditamount",
+                    summary: "SUM",
+                    label: "Importe (crédito)"
+                });
+                collection.push({ "progress": progressName, "account": account, "credit": Number(creditAmount), "debit": Number(debitAmount) });
+
+                return true;
+            });
         }
 
         function successRequest(response) {

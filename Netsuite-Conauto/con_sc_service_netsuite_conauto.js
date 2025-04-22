@@ -68,7 +68,9 @@ define([
                                         'CambiarEstatus': cambiarEstatus,
                                         'ReclasificacionPrimeraCuota': reclasificacionPrimeraCuota,
                                         'PagoUnidad': pagoUnidad,
-                                        'DisminucionCartera': disminucionCartera
+                                        'DisminucionCartera': disminucionCartera,
+                                        'ReclasificacionCartera': reclasificacionCartera,
+                                        'ActualizaFactura': actualizaFactura
                                 }
                                 let callback = operations[request.tipo];
                                 log.debug('callback', callback);
@@ -1946,7 +1948,7 @@ define([
                                 }
 
                                 let dateOfReference = data.referenciaCompleta.substring(2, 10);
-                                dateOfReference = `${date.substring(0, 2)}/${date.substring(2, 4)}/${date.substring(4, 8)}`;
+                                dateOfReference = `${dateOfReference.substring(0, 2)}/${dateOfReference.substring(2, 4)}/${dateOfReference.substring(4, 8)}`;
 
                                 let preferences = conautoPreferences.get();
                                 let memo = `Disminución de cartera por ${typesRef[data.referencia]} de la referencia ${data.referenciaCompleta} - Folio ${data.folio} - Gpo ${data.grupo} - Int${data.cliente}`;
@@ -2096,6 +2098,390 @@ define([
                                         transactions.push(saJournalId);
                                 }
 
+                        } else {
+                                throw error.create({
+                                        name: "FOLIO_NOT_FOUND",
+                                        message: "NO se encontro el folio: " + data.folio
+                                })
+                        }
+                        return {
+                                recordType: recordType,
+                                transactions: transactions,
+                                records: recordsId,
+                                solPagos: [],
+                                folios: folios,
+                                errors: errors
+                        };
+                }
+
+                /**
+                 * @param {Object} data
+                 * @param {String} data.tipo
+                 * @param {String} data.idNotificacion
+                 * @param {String} data.folio
+                 * @param {String} data.grupo
+                 * @param {String} data.cliente Integrante
+                 * @param {String} data.status
+                 * @param {String} data.referencia Referencia abreviada
+                 * @param {String} data.referenciaCompleta
+                 * @param {String} data.fecha
+                 * @param {Number} data.monto
+                 * @param {Number} data.aportacion
+                 * @param {Number} data.gastos
+                 * @param {Number} data.iva
+                 * @param {Number} data.seguro_auto
+                 * @param {Number} data.seguro_vida
+                 * @param {String} data.numSol NOTE: Ignorar por el momento
+                */
+                function reclasificacionCartera(data) {
+                        let recordType = "transaction";
+                        let recordsId = [];
+                        let folios = [];
+                        let transactions = [];
+                        let folioId = "";
+                        let errors = [];
+                        folioId = lib_conauto.recordFind("customrecord_cseg_folio_conauto", 'anyof', "externalid", data.folio);
+                        let typesRef = {
+                                "CI": "Quebranto",
+                                "PE": "Pagos en Exceso",
+                                "GL": "Grupos Liquidados",
+                                "CS": "Cancelación de seguro"
+                        }
+
+                        if (folioId) {
+                                folios.push(folioId);
+                                let dataFolio = search.lookupFields({
+                                        type: "customrecord_cseg_folio_conauto",
+                                        id: folioId,
+                                        columns: ["custrecord_cliente_integrante", "custrecord_grupo", "custrecord_imr_integrante_conauto"]
+                                });
+                                let montosReparto = {
+                                        "gastos": parseFloat(data.gastos),
+                                        "seguroVida": parseFloat(data.seguro_vida),
+                                        "seguroAuto": parseFloat(data.seguro_auto),
+                                        "aportacion": parseFloat(data.aportacion)
+                                }
+                                log.error("RECLASIFICACION", { "montosReparto": montosReparto })
+                                let dateOfReference = data.referenciaCompleta.substring(2, 10);
+                                dateOfReference = `${dateOfReference.substring(0, 2)}/${dateOfReference.substring(2, 4)}/${dateOfReference.substring(4, 8)}`;
+
+                                let preferences = conautoPreferences.get();
+                                let memo = `Reclasificación por desglose incorrecto saldos negativos de la referencia ${data.referenciaCompleta} - Folio ${data.folio} - Gpo ${data.grupo} - Int${data.cliente}`;
+                                let subsidiary = preferences.getPreference({
+                                        key: "SUBCONAUTO"
+                                });
+                                let diarioObj = record.create({
+                                        type: record.Type.JOURNAL_ENTRY,
+                                        isDynamic: true
+                                });
+                                diarioObj.setValue({
+                                        fieldId: "subsidiary",
+                                        value: subsidiary
+                                });
+                                diarioObj.setValue({
+                                        fieldId: "custbody_imr_tippolcon",
+                                        value: 1
+                                });
+                                diarioObj.setValue({
+                                        fieldId: "trandate",
+                                        value: lib_conauto.stringToDateConauto(dateOfReference)
+                                });
+                                diarioObj.setValue({
+                                        fieldId: "currency",
+                                        value: 1
+                                });
+                                diarioObj.setValue({
+                                        fieldId: "memo",
+                                        value: memo
+                                });
+
+                                let accountCredit = preferences.getPreference({
+                                        key: "PCP",
+                                        reference: "carteraDebito" // 9130-
+                                });
+                                let accountDebit = preferences.getPreference({
+                                        key: "PCP",
+                                        reference: "carteraCredito" // 9505-
+                                });
+
+                                for (let concepto in montosReparto) {
+                                        let importeConcepto = montosReparto[concepto] || 0;
+                                        if (importeConcepto == 0) {
+                                                continue;
+                                        }
+                                        let classId = preferences.getPreference({
+                                                key: "CLSP",
+                                                reference: concepto
+                                        });
+                                        log.error("Primera linea  " + accountDebit, {
+                                                "importe": Number(importeConcepto),
+                                                "tipo": !(Number(importeConcepto) > 0)
+                                        })
+                                        lib_conauto.addLineJournal(diarioObj, (concepto == "aportacion") ? accountDebit : accountCredit, (Number(importeConcepto) > 0), Math.abs(importeConcepto).toFixed(2), {
+                                                memo: memo,
+                                                custcol_referencia_conauto: data.referenciaCompleta,
+                                                custcol_folio_texto_conauto: data.folio,
+                                                cseg_folio_conauto: folioId,
+                                                cseg_grupo_conauto: dataFolio.custrecord_grupo[0].value,
+                                                custcol_imr_conauto_integrante: dataFolio.custrecord_imr_integrante_conauto,
+                                                entity: dataFolio.custrecord_cliente_integrante[0].value,
+                                                class: classId,
+                                                location: 6
+                                        });
+                                        log.error("Segunda linea  " + accountCredit, {
+                                                "importe": Number(importeConcepto),
+                                                "tipo": (Number(importeConcepto) > 0)
+                                        })
+                                        lib_conauto.addLineJournal(diarioObj, (concepto == "aportacion") ? accountCredit : accountDebit, !(Number(importeConcepto) > 0), Math.abs(importeConcepto).toFixed(2), {
+                                                memo: memo,
+                                                custcol_referencia_conauto: data.referenciaCompleta,
+                                                custcol_folio_texto_conauto: data.folio,
+                                                cseg_folio_conauto: folioId,
+                                                cseg_grupo_conauto: dataFolio.custrecord_grupo[0].value,
+                                                custcol_imr_conauto_integrante: dataFolio.custrecord_imr_integrante_conauto,
+                                                entity: dataFolio.custrecord_cliente_integrante[0].value,
+                                                class: classId,
+                                                location: 6
+                                        });
+                                }
+
+
+                                let diarioId = diarioObj.save({
+                                        ignoreMandatoryFields: true
+                                });
+                                transactions.push(diarioId);
+
+                                // Creamos asiento pasivo de seguro
+                                if (montosReparto["seguroAuto"] != 0) {
+                                        let memo = `Reclasificación por desglose incorrecto saldos negativo Seguro por pagar de la referencia ${data.referenciaCompleta} - Folio ${data.folio} - Gpo ${data.grupo} - Int${data.cliente}`;
+                                        let saJournal = record.create({
+                                                type: record.Type.JOURNAL_ENTRY,
+                                                isDynamic: true
+                                        });
+                                        saJournal.setValue({
+                                                fieldId: "subsidiary",
+                                                value: subsidiary
+                                        });
+                                        saJournal.setValue({
+                                                fieldId: "custbody_imr_tippolcon",
+                                                value: 1
+                                        });
+                                        saJournal.setValue({
+                                                fieldId: "trandate",
+                                                value: lib_conauto.stringToDateConauto(dateOfReference)
+                                        });
+                                        saJournal.setValue({
+                                                fieldId: "currency",
+                                                value: 1
+                                        });
+                                        saJournal.setValue({
+                                                fieldId: "memo",
+                                                value: memo
+                                        });
+
+                                        accountDebit = preferences.getPreference({
+                                                key: "CCP",
+                                                reference: 'seguroAutoAumento' // 9218-000-000-000
+                                        });
+                                        accountCredit = preferences.getPreference({
+                                                key: "CCP",
+                                                reference: 'seguroAutoDisminucion' // 9632-001-000-000
+                                        });
+                                        let classId = preferences.getPreference({
+                                                key: 'CLSP',
+                                                reference: 'seguroAuto'
+                                        });
+
+                                        lib_conauto.addLineJournal(saJournal, accountDebit, !(Number(montosReparto["seguroAuto"]) > 0), Math.abs(montosReparto["seguroAuto"]).toFixed(2), {
+                                                memo: memo,
+                                                custcol_referencia_conauto: data.referenciaCompleta,
+                                                custcol_folio_texto_conauto: data.folio,
+                                                cseg_folio_conauto: folioId,
+                                                cseg_grupo_conauto: dataFolio.custrecord_grupo[0].value,
+                                                custcol_imr_conauto_integrante: dataFolio.custrecord_imr_integrante_conauto,
+                                                entity: dataFolio.custrecord_cliente_integrante[0].value,
+                                                class: classId,
+                                                location: 6
+                                        });
+                                        lib_conauto.addLineJournal(saJournal, accountCredit, (Number(montosReparto["seguroAuto"]) > 0), Math.abs(montosReparto["seguroAuto"]).toFixed(2), {
+                                                memo: memo,
+                                                custcol_referencia_conauto: data.referenciaCompleta,
+                                                custcol_folio_texto_conauto: data.folio,
+                                                cseg_folio_conauto: folioId,
+                                                cseg_grupo_conauto: dataFolio.custrecord_grupo[0].value,
+                                                custcol_imr_conauto_integrante: dataFolio.custrecord_imr_integrante_conauto,
+                                                entity: dataFolio.custrecord_cliente_integrante[0].value,
+                                                class: classId,
+                                                location: 6
+                                        });
+                                        let saJournalId = saJournal.save({
+                                                ignoreMandatoryFields: true,
+                                        });
+                                        conautoPreferences.setFolioConauto(saJournalId);
+                                        transactions.push(saJournalId);
+                                }
+                        } else {
+                                throw error.create({
+                                        name: "FOLIO_NOT_FOUND",
+                                        message: "NO se encontro el folio: " + data.folio
+                                })
+                        }
+                        return {
+                                recordType: recordType,
+                                transactions: transactions,
+                                records: recordsId,
+                                solPagos: [],
+                                folios: folios,
+                                errors: errors
+                        };
+                }
+
+                /**
+                 * @param {Object} data
+                 * @param {String} data.tipo
+                 * @param {String} data.idNotificacion
+                 * @param {String} data.folio
+                 * @param {String} data.error
+                 * @param {Number} data.idFactura Integrante
+                 * @param {String} data.fecha
+                 * @param {Nuber} data.idCliente Referencia abreviada
+                 * @param {Number} data.esPersona 
+                 * @param {String} data.nombre
+                 * @param {String} data.regimen
+                 * @param {String} data.cp
+                 * @param {String} data.usoCFDI
+                 * @param {string} data.rfc
+                */
+                function actualizaFactura(data) {
+                        let recordType = "transactions"
+                        let recordsId = [];
+                        let folios = [];
+                        let transactions = [];
+                        let folioId = "";
+                        let errors = [];
+                        folioId = lib_conauto.recordFind('customrecord_cseg_folio_conauto', 'anyof', 'externalid', data.folio) || lib_conauto.recordFind('customrecord_cseg_folio_conauto', 'is', 'name', data.folio);
+
+                        if (folioId) {
+                                folios.push(folioId);
+                                // Update customer
+                                let customerRecord = record.load({
+                                        type: record.Type.CUSTOMER,
+                                        id: data.idCliente,
+                                        isDynamic: true
+                                });
+                                customerRecord.setValue({
+                                        fieldId: "isperson",
+                                        value: data.esPersona == 1 ? "T" : "F",
+                                });
+                                // if (data.esPersona == 1) {
+                                //         let name = data.nombre.split("-")
+                                //         customerRecord.setValue({
+                                //                 fieldId: "firstname",
+                                //                 value: name[0],
+                                //         });
+                                //         customerRecord.setValue({
+                                //                 fieldId: "lastname",
+                                //                 value: name[1],
+                                //         });
+                                // } else {
+                                //         customerRecord.setValue({
+                                //                 fieldId: "companyname",
+                                //                 value: data.nombre,
+                                //         });
+                                // }
+
+                                customerRecord.setValue({
+                                        fieldId: "custentity_razon_social",
+                                        value: data.nombre
+                                });
+
+                                customerRecord.setValue({
+                                        fieldId: "custentity_imr_fe40_regimenfiscal",
+                                        value: data.regimen,
+                                });
+                                customerRecord.setValue({
+                                        fieldId: "custentity_fe_residencia_fiscal",
+                                        value: data.cp,
+                                });
+                                let listCfdis = lib_conauto.getCFDIs();
+                                data.usoCFDI = listCfdis[data.usoCFDI];
+                                customerRecord.setValue({
+                                        fieldId: "custentity_uso_cfdi",
+                                        value: data.usoCFDI,
+                                });
+                                customerRecord.setValue({
+                                        fieldId: "custentity_imr_rfc_operacion",
+                                        value: data.rfc
+                                });
+                                customerRecord.setValue({
+                                        fieldId: "vatregnumber",
+                                        value: data.rfc
+                                });
+                                let countLine = customerRecord.getLineCount({
+                                        sublistId: 'addressbook'
+                                });
+                                log.error({
+                                        title: 'countLine',
+                                        details: countLine
+                                });
+                                if (countLine == 0) {
+                                        errors.push("El cliente no cuenta con una dirección creada.")
+                                } else {
+                                        customerRecord.selectLine({
+                                                sublistId: 'addressbook',
+                                                line: 1
+                                        });
+                                        customerRecord.setCurrentSublistValue({
+                                                sublistId: 'addressbook',
+                                                fieldId: 'defaultshipping',
+                                                value: true
+                                        });
+                                        customerRecord.setCurrentSublistValue({
+                                                sublistId: 'addressbook',
+                                                fieldId: 'defaultbilling',
+                                                value: true
+                                        });
+                                        let addressObj = customerRecord.getCurrentSublistSubrecord({
+                                                sublistId: 'addressbook',
+                                                fieldId: 'addressbookaddress'
+                                        });
+                                        addressObj.setValue({
+                                                fieldId: 'zip',
+                                                value: data.cp
+                                        });
+                                        customerRecord.commitLine({
+                                                sublistId: 'addressbook'
+                                        });
+                                }
+                                if (errors.length == 0) {
+                                        let idCustomer = customerRecord.save();
+                                        recordsId.push(idCustomer)
+                                        let cashSaleRecord = record.load({
+                                                type: record.Type.CASH_SALE,
+                                                id: data.idFactura,
+                                                isDynamic: true
+                                        });
+                                        let accCashSale = cashSaleRecord.getValue({
+                                                fieldId: "account"
+                                        });
+
+                                        cashSaleRecord.setValue({
+                                                fieldId: "entity",
+                                                value: data.idCliente
+                                        });
+                                        cashSaleRecord.setValue({
+                                                fieldId: "account",
+                                                value: accCashSale
+                                        });
+                                        cashSaleRecord.setValue({
+                                                fieldId: "custbody_conauto_fixed_cfdi",
+                                                value: true
+                                        });
+
+                                        let idCashSale = cashSaleRecord.save();
+                                        recordsId.push(idCashSale);
+                                        transactions.push(idCashSale);
+                                }
                         } else {
                                 throw error.create({
                                         name: "FOLIO_NOT_FOUND",

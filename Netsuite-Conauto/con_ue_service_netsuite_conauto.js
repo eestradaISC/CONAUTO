@@ -222,7 +222,7 @@ define([
                             break;
 
                         case 'DisminucionCartera':
-                            let taskServiceDISCAR = task.create({
+                            const taskServiceDISCAR = task.create({
                                 taskType: task.TaskType.SCHEDULED_SCRIPT,
                                 scriptId: 'customscript_con_sc_service_ns_conauto',
                                 params: {
@@ -230,6 +230,29 @@ define([
                                 }
                             });
                             taskServiceDISCAR.submit();
+                            break;
+
+                        case 'facturasNoTimbradas':
+                            let taskServiceFNT = task.create({
+                                taskType: task.TaskType.SCHEDULED_SCRIPT,
+                                scriptId: 'customscript_con_sc_enviofacprog',
+                                deploymentId: 'customdeploy_con_sc_enviofacprog_call',
+                                params: {
+                                    custscript_log_con: logId
+                                }
+                            });
+                            taskServiceFNT.submit();
+                            break;
+
+                        case 'actualizaFactura':
+                            let taskServiceAF = task.create({
+                                taskType: task.TaskType.SCHEDULED_SCRIPT,
+                                scriptId: 'customscript_con_sc_service_ns_conauto',
+                                params: {
+                                    custscript_log_service_id: logId
+                                }
+                            });
+                            taskServiceAF.submit();
                             break;
 
                     }

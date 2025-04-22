@@ -62,7 +62,8 @@ define([
                     'CambiarEstatus': cambiarEstatus,
                     'ReclasificacionPrimeraCuota': reclasificacionPrimeraCuota,
                     'CesionDerechos': cesionDerechos,
-                    'DisminucionCartera': disminucionCartera
+                    'DisminucionCartera': disminucionCartera,
+                    'ReclasificacionCartera': reclasificacionCartera
                 }
                 let callback = operations[data.tipo];
                 if (callback) {
@@ -1072,10 +1073,10 @@ define([
          * @param {String} data.fecha
          * @param {Number} data.monto
          * @param {Number} data.aportacion
-	     * @param {Number} data.gastos
-	     * @param {Number} data.iva
-	     * @param {Number} data.seguro_auto
-	     * @param {Number} data.seguro_vida
+         * @param {Number} data.gastos
+         * @param {Number} data.iva
+         * @param {Number} data.seguro_auto
+         * @param {Number} data.seguro_vida
          * @param {String} data.numSol NOTE: Ignorar por el momento
          * @param {Object} response
          * @param {Number} response.code
@@ -1088,7 +1089,7 @@ define([
             try {
                 let folioId = recordFind("customrecord_cseg_folio_conauto", 'anyof', "externalid", data.folio);
                 if (folioId) {
-                    let mandatoryFields = ["folio", "monto", "aportacion", "gastos", "iva", "seguro_auto", "seguro_vida", "referencia", "referenciaCompleta", "grupo", "cliente", "idNotificacion"];
+                    let mandatoryFields = ["folio", "monto", "aportacion", "gastos", "seguro_auto", "seguro_vida", "referencia", "referenciaCompleta", "grupo", "cliente", "idNotificacion"];
                     checkMandatoryFields(data, mandatoryFields, response);
                     checkMandatoryFieldsDate(data, ["fecha"], response)
                 } else {
@@ -1103,6 +1104,57 @@ define([
                     });
                     log.error("dataFolio", data)
                     log.error("dataFolio", dataFolio)
+                    if (dataFolio.custrecord_grupo[0].text != data.grupo) { response.code = 304; response.info.push(`El grupo no coincide con el registrado en NetSuite, actualizar folio.`) };
+                    if (dataFolio.custrecord_imr_integrante_conauto != data.cliente) { response.code = 304; response.info.push(`El integrante no coincide con el registrado en NetSuite, actualizar folio.`) };
+                }
+
+            } catch (error) {
+                response.code = 500;
+                response.info.push('ERROR CREATE LOG REQUEST: ' + e.message.toString());
+                handlerErrorLogRequest('ERROR CREATE LOG REQUEST: ' + e.message.toString(), logId);
+            }
+        }
+
+        /**
+         * @param {Object} data
+         * @param {String} data.tipo
+         * @param {String} data.idNotificacion
+         * @param {String} data.folio
+         * @param {String} data.grupo
+         * @param {String} data.cliente Integrante
+         * @param {String} data.referencia Referencia abreviada
+         * @param {String} data.referenciaCompleta
+         * @param {String} data.fecha
+         * @param {Number} data.monto
+         * @param {Number} data.aportacion
+         * @param {Number} data.gastos
+         * @param {Number} data.iva
+         * @param {Number} data.seguro_auto
+         * @param {Number} data.seguro_vida
+         * @param {Object} response
+         * @param {Number} response.code
+         * @param {Array}  response.info
+         */
+        function reclasificacionCartera(data, response) {
+            let logId = null;
+            logId = createLog(data, response);
+            response.logId = logId;
+            try {
+                let folioId = recordFind("customrecord_cseg_folio_conauto", 'anyof', "externalid", data.folio);
+                if (folioId) {
+                    let mandatoryFields = ["folio", "monto", "aportacion", "gastos", "seguro_auto", "seguro_vida", "referencia", "referenciaCompleta", "idNotificacion"];
+                    checkMandatoryFields(data, mandatoryFields, response);
+                    checkMandatoryFieldsDate(data, ["fecha"], response)
+                } else {
+                    response.code = 304;
+                    response.info.push("Folio: " + data.folio + " no existe en netsuite");
+                }
+                if (response.code != 304) {
+                    let dataFolio = search.lookupFields({
+                        type: "customrecord_cseg_folio_conauto",
+                        id: folioId,
+                        columns: ["custrecord_grupo", "custrecord_imr_integrante_conauto"]
+                    });
                     if (dataFolio.custrecord_grupo[0].text != data.grupo) { response.code = 304; response.info.push(`El grupo no coincide con el registrado en NetSuite, actualizar folio.`) };
                     if (dataFolio.custrecord_imr_integrante_conauto != data.cliente) { response.code = 304; response.info.push(`El integrante no coincide con el registrado en NetSuite, actualizar folio.`) };
                 }
